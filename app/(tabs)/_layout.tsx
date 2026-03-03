@@ -54,13 +54,6 @@ export default function TabLayout() {
                 tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.crop.circle.fill" color={color} />,
             }}
         />
-
-        <Tabs.Screen name="index" options={{ title: 'Home' }} />
-        <Tabs.Screen name="stats" options={{ title: 'Stats' }} />
-        <Tabs.Screen name="workout" options={{ title: 'Workout' }} />
-        <Tabs.Screen name="social" options={{ title: 'Social' }} />
-        <Tabs.Screen name="profil" options={{ title: 'Profil' }} />
-
     </Tabs>
   );
 }
