@@ -3,6 +3,7 @@ import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-nativ
 
 type Categorie = "Questions" | "Planifications" | "Régime" | null;
 
+// Choix de réponses
 type ChoixQuestion =
     | "Comment perdre du gras"
     | "Comment prendre du muscle"
@@ -26,6 +27,8 @@ type Message = {
     auteur: "assistant" | "user";
     texte: string;
 };
+
+// Operations (logique)
 
 export default function AssistantScreen() {
     const scrollRef = useRef<ScrollView | null>(null);
@@ -223,6 +226,8 @@ export default function AssistantScreen() {
         setTexteEntree("");
     }
 
+
+    // Fonctions textes pour affichage
     return (
         <View style={{ flex: 1, backgroundColor: "#070B14" }}>
             <View style={{ padding: 20, paddingTop: 30, paddingBottom: 10 }}>

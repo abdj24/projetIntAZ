@@ -1,5 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 
+
+// Textes du menu home
 export default function HomeScreen() {
     return (
         <ScrollView
