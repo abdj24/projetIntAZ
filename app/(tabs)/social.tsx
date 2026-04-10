@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { mockWorkouts } from "@/data/mockData";
+import { getSessionWorkouts, subscribeSessionWorkouts } from "@/data/workoutSession";
+import { getEffectiveToday, subscribeTodayOverride } from "@/data/testToday";
+import { Workout } from "@/types/models";
+import { Colors } from "@/constants/theme";
+import { useTheme } from "@/context/context";
 
 type RangType = "Bronze" | "Argent" | "Or" | "Diamant";
 
 type JoueurClassement = {
     id: string;
     nom: string;
-    rang: RangType;
+    points: number;
 };
 
 type Reaction = {
@@ -30,32 +36,15 @@ type Publication = {
     likes: number;
     reactions: Reaction[];
     commentaires: Commentaire[];
+    estMoi?: boolean;
 };
 
-const classement: JoueurClassement[] = [
-    { id: "c1", nom: "Toi", rang: "Diamant" },
-    { id: "c2", nom: "Amine", rang: "Or" },
-    { id: "c3", nom: "Sarah", rang: "Argent" },
-    { id: "c4", nom: "Yanis", rang: "Bronze" },
+const joueursBase: JoueurClassement[] = [
+    { id: "c1", nom: "Toi", points: 0 },
+    { id: "c2", nom: "Amine", points: 17 },
+    { id: "c3", nom: "Sarah", points: 10 },
+    { id: "c4", nom: "Yanis", points: 6 },
 ];
-
-const maPublicationDuJour: Publication = {
-    id: "p1",
-    auteur: "Toi",
-    temps: "Aujourd’hui - 18:10",
-    titre: "Haut du corps terminé",
-    description: "Bonne séance. Push-ups, développé haltères et épaules.",
-    likes: 12,
-    reactions: [
-        { id: "r1", ami: "Amine", emoji: "🔥" },
-        { id: "r2", ami: "Sarah", emoji: "💪" },
-        { id: "r3", ami: "Yanis", emoji: "👏" },
-    ],
-    commentaires: [
-        { id: "cm1", auteur: "Amine", texte: "Grosse séance 🔥" },
-        { id: "cm2", auteur: "Sarah", texte: "Bien joué 💪" },
-    ],
-};
 
 const publicationsAmisInitiales: Publication[] = [
     {
@@ -69,9 +58,7 @@ const publicationsAmisInitiales: Publication[] = [
             { id: "ra1", ami: "Toi", emoji: "🔥" },
             { id: "ra2", ami: "Sarah", emoji: "💯" },
         ],
-        commentaires: [
-            { id: "ca1", auteur: "Toi", texte: "Très lourd 👏" },
-        ],
+        commentaires: [{ id: "ca1", auteur: "Toi", texte: "Très lourd 👏" }],
     },
     {
         id: "a2",
@@ -80,12 +67,8 @@ const publicationsAmisInitiales: Publication[] = [
         titre: "Cardio du soir",
         description: "25 min de course + 10 min de marche rapide.",
         likes: 6,
-        reactions: [
-            { id: "ra3", ami: "Toi", emoji: "👏" },
-        ],
-        commentaires: [
-            { id: "ca2", auteur: "Yanis", texte: "Propre ça" },
-        ],
+        reactions: [{ id: "ra3", ami: "Toi", emoji: "👏" }],
+        commentaires: [{ id: "ca2", auteur: "Yanis", texte: "Propre ça" }],
     },
     {
         id: "a3",
@@ -94,9 +77,7 @@ const publicationsAmisInitiales: Publication[] = [
         titre: "Séance abdos",
         description: "Crunchs, planche et mountain climbers.",
         likes: 4,
-        reactions: [
-            { id: "ra4", ami: "Toi", emoji: "💪" },
-        ],
+        reactions: [{ id: "ra4", ami: "Toi", emoji: "💪" }],
         commentaires: [],
     },
 ];
@@ -114,474 +95,716 @@ function couleurRang(rang: RangType) {
     return "#7DD3FC";
 }
 
+function calculerRang(points: number): RangType {
+    if (points >= 20) {
+        return "Diamant";
+    }
+    if (points >= 12) {
+        return "Or";
+    }
+    if (points >= 7) {
+        return "Argent";
+    }
+    return "Bronze";
+}
+
+function formaterTemps(date: string) {
+    const objet = new Date(date);
+    return objet.toLocaleDateString();
+}
+
 export default function SocialScreen() {
-    const [mesLikes, setMesLikes] = useState<number>(maPublicationDuJour.likes);
-    const [jaimeMaPublication, setJaimeMaPublication] = useState(false);
-    const [maReaction, setMaReaction] = useState<string | null>(null);
-    const [voirCommentairesMoi, setVoirCommentairesMoi] = useState(false);
+    const { theme } = useTheme();
+    const colors = Colors[theme];
+
+    const ui = {
+        screenBackground: colors.background,
+        textPrimary: colors.text,
+        textMuted: theme === "dark" ? "#7C8799" : "#6B7280",
+        textSecondary: theme === "dark" ? "#93A1B5" : "#5F6B7A",
+        cardBackground: theme === "dark" ? "#0D1524" : "#F4F7FB",
+        cardSecondary: theme === "dark" ? "#121C2D" : "#E9EEF5",
+        cardTertiary: theme === "dark" ? "#182335" : "#DCE6F5",
+        border: theme === "dark" ? "#162033" : "#D8E0EA",
+        accent: "#2EE6D6",
+        accentText: "#070B14",
+        selfSubtext: theme === "dark" ? "#0B2F2B" : "#0B5F58",
+    };
+
+    const [today, setToday] = useState<string>(getEffectiveToday());
+    const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(getSessionWorkouts());
 
     const [publicationsAmis, setPublicationsAmis] = useState<Publication[]>(publicationsAmisInitiales);
-    const [likesMis, setLikesMis] = useState<{ [id: string]: boolean }>({});
-    const [commentairesVisibles, setCommentairesVisibles] = useState<{ [id: string]: boolean }>({});
-    const [reactionsPerso, setReactionsPerso] = useState<{ [id: string]: string | null }>({});
-
     const [publicationsPerso, setPublicationsPerso] = useState<Publication[]>([]);
     const [compteurPublication, setCompteurPublication] = useState(1);
 
-    function likerMaPublication() {
-        if (jaimeMaPublication) {
-            setMesLikes(mesLikes - 1);
-            setJaimeMaPublication(false);
-        } else {
-            setMesLikes(mesLikes + 1);
-            setJaimeMaPublication(true);
+    const [likesMis, setLikesMis] = useState<{ [id: string]: boolean }>({});
+    const [commentairesVisibles, setCommentairesVisibles] = useState<{ [id: string]: boolean }>({});
+    const [reactionsPerso, setReactionsPerso] = useState<{ [id: string]: string | null }>({});
+    const [commentairesAjoutes, setCommentairesAjoutes] = useState<{ [id: string]: Commentaire[] }>({});
+
+    useEffect(() => {
+        const unsubscribeWorkouts = subscribeSessionWorkouts(() => {
+            setSessionWorkouts([...getSessionWorkouts()]);
+        });
+
+        const unsubscribeToday = subscribeTodayOverride(() => {
+            setToday(getEffectiveToday());
+        });
+
+        return () => {
+            unsubscribeWorkouts();
+            unsubscribeToday();
+        };
+    }, []);
+
+    const tousLesWorkouts = useMemo(() => {
+        return [...sessionWorkouts, ...mockWorkouts];
+    }, [sessionWorkouts]);
+
+    const workoutsPerso = useMemo(() => {
+        return tousLesWorkouts
+            .filter((workout) => workout.completed)
+            .sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
+    }, [tousLesWorkouts]);
+
+    const classement = useMemo(() => {
+        const mesPoints = workoutsPerso.length;
+
+        const joueurs = joueursBase.map((joueur) => {
+            if (joueur.nom === "Toi") {
+                return {
+                    ...joueur,
+                    points: mesPoints,
+                };
+            }
+            return joueur;
+        });
+
+        return [...joueurs].sort((a, b) => b.points - a.points);
+    }, [workoutsPerso]);
+
+    const maPublicationDuJour = useMemo(() => {
+        const workoutDuJour = workoutsPerso.find((workout) => workout.date === today);
+
+        if (!workoutDuJour) {
+            return null;
+        }
+
+        return {
+            id: `jour-${workoutDuJour.id}`,
+            auteur: "Toi",
+            temps: "Aujourd’hui",
+            titre: workoutDuJour.title,
+            description: `${workoutDuJour.exercises.length} exercice(s) complété(s) • ${workoutDuJour.duration} min`,
+            likes: 12,
+            reactions: [
+                { id: "r1", ami: "Amine", emoji: "🔥" },
+                { id: "r2", ami: "Sarah", emoji: "💪" },
+                { id: "r3", ami: "Yanis", emoji: "👏" },
+            ],
+            commentaires: [
+                { id: "cm1", auteur: "Amine", texte: "Grosse séance 🔥" },
+                { id: "cm2", auteur: "Sarah", texte: "Bien joué 💪" },
+            ],
+            estMoi: true,
+        } as Publication;
+    }, [workoutsPerso, today]);
+
+    const feedComplet = useMemo(() => {
+        return [...publicationsPerso, ...publicationsAmis];
+    }, [publicationsPerso, publicationsAmis]);
+
+    function likerPublication(id: string, source: "moi" | "ami" | "perso") {
+        const dejaLike = likesMis[id] === true;
+
+        setLikesMis((ancien) => ({
+            ...ancien,
+            [id]: !dejaLike,
+        }));
+
+        if (source === "ami") {
+            setPublicationsAmis((anciennes) =>
+                anciennes.map((publication) => {
+                    if (publication.id !== id) {
+                        return publication;
+                    }
+
+                    return {
+                        ...publication,
+                        likes: dejaLike ? publication.likes - 1 : publication.likes + 1,
+                    };
+                })
+            );
+        }
+
+        if (source === "perso") {
+            setPublicationsPerso((anciennes) =>
+                anciennes.map((publication) => {
+                    if (publication.id !== id) {
+                        return publication;
+                    }
+
+                    return {
+                        ...publication,
+                        likes: dejaLike ? publication.likes - 1 : publication.likes + 1,
+                    };
+                })
+            );
         }
     }
 
-    function likerPublicationAmi(id: string) {
-        const dejaLike = likesMis[id] === true;
-
-        const nouvellesPublications = publicationsAmis.map((publication) => {
-            if (publication.id === id) {
-                if (dejaLike) {
-                    return {
-                        ...publication,
-                        likes: publication.likes - 1,
-                    };
-                } else {
-                    return {
-                        ...publication,
-                        likes: publication.likes + 1,
-                    };
-                }
-            }
-            return publication;
-        });
-
-        setPublicationsAmis(nouvellesPublications);
-
-        setLikesMis({
-            ...likesMis,
-            [id]: !dejaLike,
-        });
-    }
-
     function basculerCommentaires(id: string) {
-        setCommentairesVisibles({
-            ...commentairesVisibles,
-            [id]: !commentairesVisibles[id],
-        });
+        setCommentairesVisibles((ancien) => ({
+            ...ancien,
+            [id]: !ancien[id],
+        }));
     }
 
-    function ajouterReactionMoi(emoji: string) {
-        setMaReaction(emoji);
-    }
-
-    function ajouterReactionPublicationAmi(id: string, emoji: string) {
-        setReactionsPerso({
-            ...reactionsPerso,
+    function ajouterReactionPublication(id: string, emoji: string) {
+        setReactionsPerso((ancien) => ({
+            ...ancien,
             [id]: emoji,
-        });
+        }));
     }
 
-    function publier() {
+    function ajouterCommentaireRapide(id: string) {
+        const nouveauCommentaire: Commentaire = {
+            id: `new-${Date.now()}`,
+            auteur: "Toi",
+            texte: "Bravo 👏",
+        };
+
+        setCommentairesAjoutes((ancien) => ({
+            ...ancien,
+            [id]: [...(ancien[id] || []), nouveauCommentaire],
+        }));
+
+        setCommentairesVisibles((ancien) => ({
+            ...ancien,
+            [id]: true,
+        }));
+    }
+
+    function publierDerniereSeance() {
+        const dernierWorkout = workoutsPerso[0];
+
+        if (!dernierWorkout) {
+            return;
+        }
+
         const nouvellePublication: Publication = {
             id: "m" + compteurPublication,
             auteur: "Toi",
             temps: "À l’instant",
-            titre: "Nouvelle publication",
-            description: "Séance partagée avec tes amis.",
+            titre: dernierWorkout.title,
+            description: `${dernierWorkout.exercises.length} exercice(s) complété(s) • ${dernierWorkout.duration} min`,
             likes: 0,
             reactions: [],
             commentaires: [],
+            estMoi: true,
         };
 
-        setPublicationsPerso([nouvellePublication, ...publicationsPerso]);
-        setCompteurPublication(compteurPublication + 1);
+        setPublicationsPerso((anciennes) => [nouvellePublication, ...anciennes]);
+        setCompteurPublication((ancien) => ancien + 1);
     }
 
-    return (
-        <View style={{ flex: 1, backgroundColor: "#070B14" }}>
-            <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{ padding: 20, paddingTop: 30, paddingBottom: 140 }}
+    function afficherCommentaires(publication: Publication) {
+        return [...publication.commentaires, ...(commentairesAjoutes[publication.id] || [])];
+    }
+
+    function CardPublication({
+                                 publication,
+                                 source,
+                             }: {
+        publication: Publication;
+        source: "moi" | "ami" | "perso";
+    }) {
+        const commentaires = afficherCommentaires(publication);
+
+        return (
+            <View
+                style={{
+                    backgroundColor: ui.cardSecondary,
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 12,
+                }}
             >
-                <Text style={{ color: "white", fontSize: 34, fontWeight: "800", marginBottom: 8 }}>
-                    Social
-                </Text>
-
-                <Text style={{ color: "#7C8799", fontSize: 15, marginBottom: 18 }}>
-                    Classement, activité et publications
-                </Text>
-
-                {/* Classement */}
-
-                <View
+                <Text
                     style={{
-                        backgroundColor: "#0D1524",
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: "#162033",
-                        marginBottom: 20,
+                        color: ui.textPrimary,
+                        fontSize: 17,
+                        fontWeight: "700",
+                        marginBottom: 4,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
-                        Classement
-                    </Text>
+                    {publication.auteur} · {publication.titre}
+                </Text>
 
-                    {classement.map((joueur, index) => (
-                        <View
-                            key={joueur.id}
+                <Text style={{ color: ui.textMuted, marginBottom: 10 }}>
+                    {publication.temps}
+                </Text>
+
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 15,
+                        marginBottom: 12,
+                    }}
+                >
+                    {publication.description}
+                </Text>
+
+                <TouchableOpacity
+                    onPress={() => likerPublication(publication.id, source)}
+                    style={{
+                        backgroundColor: likesMis[publication.id] ? ui.accent : ui.cardTertiary,
+                        borderRadius: 14,
+                        padding: 14,
+                        alignItems: "center",
+                        marginBottom: 10,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: likesMis[publication.id] ? ui.accentText : ui.textPrimary,
+                            fontWeight: "700",
+                        }}
+                    >
+                        👍 Like : {publication.likes}
+                    </Text>
+                </TouchableOpacity>
+
+                <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
+                    <TouchableOpacity
+                        onPress={() => basculerCommentaires(publication.id)}
+                        style={{
+                            flex: 1,
+                            backgroundColor: ui.cardTertiary,
+                            borderRadius: 14,
+                            padding: 14,
+                            alignItems: "center",
+                        }}
+                    >
+                        <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
+                            💬 Voir commentaires
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => ajouterCommentaireRapide(publication.id)}
+                        style={{
+                            flex: 1,
+                            backgroundColor: ui.cardTertiary,
+                            borderRadius: 14,
+                            padding: 14,
+                            alignItems: "center",
+                        }}
+                    >
+                        <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
+                            Ajouter bravo
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{ flexDirection: "row", marginBottom: 12 }}>
+                    {["🔥", "💪", "👏", "😮"].map((emoji) => (
+                        <TouchableOpacity
+                            key={emoji}
+                            onPress={() => ajouterReactionPublication(publication.id, emoji)}
                             style={{
-                                backgroundColor: joueur.nom === "Toi" ? "#2EE6D6" : "#121C2D",
-                                borderRadius: 16,
-                                padding: 16,
-                                marginBottom: 10,
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                alignItems: "center",
+                                backgroundColor:
+                                    reactionsPerso[publication.id] === emoji
+                                        ? ui.accent
+                                        : ui.cardTertiary,
+                                borderRadius: 12,
+                                paddingVertical: 10,
+                                paddingHorizontal: 14,
+                                marginRight: 8,
                             }}
                         >
-                            <Text
-                                style={{
-                                    color: joueur.nom === "Toi" ? "#070B14" : "white",
-                                    fontSize: 16,
-                                    fontWeight: "700",
-                                }}
-                            >
-                                #{index + 1} {joueur.nom}
-                            </Text>
-
-                            <Text
-                                style={{
-                                    color: joueur.nom === "Toi" ? "#070B14" : couleurRang(joueur.rang),
-                                    fontSize: 15,
-                                    fontWeight: "800",
-                                }}
-                            >
-                                {joueur.rang}
-                            </Text>
-                        </View>
+                            <Text style={{ fontSize: 18 }}>{emoji}</Text>
+                        </TouchableOpacity>
                     ))}
                 </View>
 
-                {/* Ma publication */}
-
-                <View
-                    style={{
-                        backgroundColor: "#0D1524",
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: "#162033",
-                        marginBottom: 20,
-                    }}
-                >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
-                        Ce que j’ai fait aujourd’hui
+                {reactionsPerso[publication.id] && (
+                    <Text style={{ color: ui.accent, marginBottom: 12 }}>
+                        Ta réaction : {reactionsPerso[publication.id]}
                     </Text>
+                )}
 
+                {publication.reactions.map((reaction) => (
                     <View
+                        key={reaction.id}
                         style={{
-                            backgroundColor: "#121C2D",
-                            borderRadius: 16,
-                            padding: 16,
+                            backgroundColor: ui.cardTertiary,
+                            borderRadius: 12,
+                            padding: 10,
+                            marginBottom: 8,
                         }}
                     >
-                        <Text style={{ color: "white", fontSize: 17, fontWeight: "700", marginBottom: 4 }}>
-                            {maPublicationDuJour.titre}
+                        <Text style={{ color: ui.textPrimary }}>
+                            {reaction.ami} {reaction.emoji}
                         </Text>
+                    </View>
+                ))}
 
-                        <Text style={{ color: "#7C8799", marginBottom: 10 }}>
-                            {maPublicationDuJour.temps}
-                        </Text>
-
-                        <Text style={{ color: "white", fontSize: 15, marginBottom: 14 }}>
-                            {maPublicationDuJour.description}
-                        </Text>
-
-                        <TouchableOpacity
-                            onPress={likerMaPublication}
+                {commentairesVisibles[publication.id] && (
+                    <View style={{ marginTop: 8 }}>
+                        <Text
                             style={{
-                                backgroundColor: jaimeMaPublication ? "#2EE6D6" : "#182335",
-                                borderRadius: 14,
-                                padding: 14,
+                                color: ui.textPrimary,
+                                fontSize: 16,
+                                fontWeight: "700",
                                 marginBottom: 10,
-                                alignItems: "center",
                             }}
                         >
-                            <Text
-                                style={{
-                                    color: jaimeMaPublication ? "#070B14" : "white",
-                                    fontWeight: "700",
-                                }}
-                            >
-                                👍 Like : {mesLikes}
-                            </Text>
-                        </TouchableOpacity>
+                            Commentaires
+                        </Text>
 
-                        <TouchableOpacity
-                            onPress={() => setVoirCommentairesMoi(!voirCommentairesMoi)}
-                            style={{
-                                backgroundColor: "#182335",
-                                borderRadius: 14,
-                                padding: 14,
-                                marginBottom: 10,
-                                alignItems: "center",
-                            }}
-                        >
-                            <Text style={{ color: "white", fontWeight: "700" }}>
-                                💬 Commenter
-                            </Text>
-                        </TouchableOpacity>
-
-                        <View style={{ flexDirection: "row", marginBottom: 12 }}>
-                            {["🔥", "💪", "👏", "😮"].map((emoji) => (
-                                <TouchableOpacity
-                                    key={emoji}
-                                    onPress={() => ajouterReactionMoi(emoji)}
-                                    style={{
-                                        backgroundColor: maReaction === emoji ? "#2EE6D6" : "#182335",
-                                        borderRadius: 12,
-                                        paddingVertical: 10,
-                                        paddingHorizontal: 14,
-                                        marginRight: 8,
-                                    }}
-                                >
-                                    <Text style={{ fontSize: 18 }}>{emoji}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        {maReaction && (
-                            <Text style={{ color: "#2EE6D6", marginBottom: 12 }}>
-                                Ta réaction : {maReaction}
+                        {commentaires.length === 0 && (
+                            <Text style={{ color: ui.textMuted }}>
+                                Aucun commentaire
                             </Text>
                         )}
 
-                        <Text style={{ color: "white", fontSize: 16, fontWeight: "700", marginBottom: 10 }}>
-                            Réactions de mes amis
-                        </Text>
-
-                        {maPublicationDuJour.reactions.map((reaction) => (
+                        {commentaires.map((commentaire) => (
                             <View
-                                key={reaction.id}
+                                key={commentaire.id}
                                 style={{
-                                    backgroundColor: "#182335",
+                                    backgroundColor: ui.cardTertiary,
                                     borderRadius: 12,
                                     padding: 12,
                                     marginBottom: 8,
                                 }}
                             >
-                                <Text style={{ color: "white", fontSize: 15 }}>
-                                    {reaction.ami} {reaction.emoji}
+                                <Text style={{ color: ui.textPrimary }}>
+                                    {commentaire.auteur} : {commentaire.texte}
                                 </Text>
                             </View>
                         ))}
-
-                        {voirCommentairesMoi && (
-                            <View style={{ marginTop: 10 }}>
-                                <Text style={{ color: "white", fontSize: 16, fontWeight: "700", marginBottom: 10 }}>
-                                    Commentaires
-                                </Text>
-
-                                {maPublicationDuJour.commentaires.map((commentaire) => (
-                                    <View
-                                        key={commentaire.id}
-                                        style={{
-                                            backgroundColor: "#182335",
-                                            borderRadius: 12,
-                                            padding: 12,
-                                            marginBottom: 8,
-                                        }}
-                                    >
-                                        <Text style={{ color: "white" }}>
-                                            {commentaire.auteur} : {commentaire.texte}
-                                        </Text>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
                     </View>
-                </View>
+                )}
+            </View>
+        );
+    }
 
-                {/* Publications amis */}
+    return (
+        <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ padding: 20, paddingTop: 30, paddingBottom: 140 }}
+            >
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 34,
+                        fontWeight: "800",
+                        marginBottom: 8,
+                    }}
+                >
+                    Social
+                </Text>
+
+                <Text
+                    style={{
+                        color: ui.textMuted,
+                        fontSize: 15,
+                        marginBottom: 18,
+                    }}
+                >
+                    Classement, activité et publications
+                </Text>
 
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
+                        Classement
+                    </Text>
+
+                    {classement.map((joueur, index) => {
+                        const rang = calculerRang(joueur.points);
+
+                        return (
+                            <View
+                                key={joueur.id}
+                                style={{
+                                    backgroundColor:
+                                        joueur.nom === "Toi" ? ui.accent : ui.cardSecondary,
+                                    borderRadius: 16,
+                                    padding: 16,
+                                    marginBottom: 10,
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <View>
+                                    <Text
+                                        style={{
+                                            color:
+                                                joueur.nom === "Toi"
+                                                    ? ui.accentText
+                                                    : ui.textPrimary,
+                                            fontSize: 16,
+                                            fontWeight: "700",
+                                        }}
+                                    >
+                                        #{index + 1} {joueur.nom}
+                                    </Text>
+
+                                    <Text
+                                        style={{
+                                            color:
+                                                joueur.nom === "Toi"
+                                                    ? ui.selfSubtext
+                                                    : ui.textMuted,
+                                            marginTop: 4,
+                                        }}
+                                    >
+                                        {joueur.points} séance(s)
+                                    </Text>
+                                </View>
+
+                                <Text
+                                    style={{
+                                        color:
+                                            joueur.nom === "Toi"
+                                                ? ui.accentText
+                                                : couleurRang(rang),
+                                        fontSize: 15,
+                                        fontWeight: "800",
+                                    }}
+                                >
+                                    {rang}
+                                </Text>
+                            </View>
+                        );
+                    })}
+                </View>
+
+                <View
+                    style={{
+                        backgroundColor: ui.cardBackground,
+                        borderRadius: 20,
+                        padding: 18,
+                        borderWidth: 1,
+                        borderColor: ui.border,
+                        marginBottom: 20,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
+                        Ce que j’ai fait aujourd’hui
+                    </Text>
+
+                    {!maPublicationDuJour && (
+                        <Text style={{ color: ui.textMuted, fontSize: 15 }}>
+                            Aucune séance enregistrée aujourd’hui.
+                        </Text>
+                    )}
+
+                    {maPublicationDuJour && (
+                        <CardPublication publication={maPublicationDuJour} source="moi" />
+                    )}
+                </View>
+
+                <View
+                    style={{
+                        backgroundColor: ui.cardBackground,
+                        borderRadius: 20,
+                        padding: 18,
+                        borderWidth: 1,
+                        borderColor: ui.border,
+                        marginBottom: 20,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
                         Ce que mes amis ont fait aujourd’hui
                     </Text>
 
                     {publicationsAmis.map((publication) => (
-                        <View
+                        <CardPublication
                             key={publication.id}
-                            style={{
-                                backgroundColor: "#121C2D",
-                                borderRadius: 16,
-                                padding: 16,
-                                marginBottom: 12,
-                            }}
-                        >
-                            <Text style={{ color: "white", fontSize: 17, fontWeight: "700", marginBottom: 4 }}>
-                                {publication.auteur} · {publication.titre}
-                            </Text>
-
-                            <Text style={{ color: "#7C8799", marginBottom: 10 }}>
-                                {publication.temps}
-                            </Text>
-
-                            <Text style={{ color: "white", fontSize: 15, marginBottom: 12 }}>
-                                {publication.description}
-                            </Text>
-
-                            <TouchableOpacity
-                                onPress={() => likerPublicationAmi(publication.id)}
-                                style={{
-                                    backgroundColor: likesMis[publication.id] ? "#2EE6D6" : "#182335",
-                                    borderRadius: 14,
-                                    padding: 14,
-                                    alignItems: "center",
-                                    marginBottom: 10,
-                                }}
-                            >
-                                <Text
-                                    style={{
-                                        color: likesMis[publication.id] ? "#070B14" : "white",
-                                        fontWeight: "700",
-                                    }}
-                                >
-                                    👍 Like : {publication.likes}
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => basculerCommentaires(publication.id)}
-                                style={{
-                                    backgroundColor: "#182335",
-                                    borderRadius: 14,
-                                    padding: 14,
-                                    alignItems: "center",
-                                    marginBottom: 10,
-                                }}
-                            >
-                                <Text style={{ color: "white", fontWeight: "700" }}>
-                                    💬 Commenter
-                                </Text>
-                            </TouchableOpacity>
-
-                            <View style={{ flexDirection: "row", marginBottom: 12 }}>
-                                {["🔥", "💪", "👏", "😮"].map((emoji) => (
-                                    <TouchableOpacity
-                                        key={emoji}
-                                        onPress={() => ajouterReactionPublicationAmi(publication.id, emoji)}
-                                        style={{
-                                            backgroundColor:
-                                                reactionsPerso[publication.id] === emoji ? "#2EE6D6" : "#182335",
-                                            borderRadius: 12,
-                                            paddingVertical: 10,
-                                            paddingHorizontal: 14,
-                                            marginRight: 8,
-                                        }}
-                                    >
-                                        <Text style={{ fontSize: 18 }}>{emoji}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            {reactionsPerso[publication.id] && (
-                                <Text style={{ color: "#2EE6D6", marginBottom: 12 }}>
-                                    Ta réaction : {reactionsPerso[publication.id]}
-                                </Text>
-                            )}
-
-                            {publication.reactions.map((reaction) => (
-                                <View
-                                    key={reaction.id}
-                                    style={{
-                                        backgroundColor: "#182335",
-                                        borderRadius: 12,
-                                        padding: 10,
-                                        marginBottom: 8,
-                                    }}
-                                >
-                                    <Text style={{ color: "white" }}>
-                                        {reaction.ami} {reaction.emoji}
-                                    </Text>
-                                </View>
-                            ))}
-
-                            {commentairesVisibles[publication.id] && (
-                                <View style={{ marginTop: 8 }}>
-                                    <Text style={{ color: "white", fontSize: 16, fontWeight: "700", marginBottom: 10 }}>
-                                        Commentaires
-                                    </Text>
-
-                                    {publication.commentaires.length === 0 && (
-                                        <Text style={{ color: "#7C8799" }}>
-                                            Aucun commentaire
-                                        </Text>
-                                    )}
-
-                                    {publication.commentaires.map((commentaire) => (
-                                        <View
-                                            key={commentaire.id}
-                                            style={{
-                                                backgroundColor: "#182335",
-                                                borderRadius: 12,
-                                                padding: 12,
-                                                marginBottom: 8,
-                                            }}
-                                        >
-                                            <Text style={{ color: "white" }}>
-                                                {commentaire.auteur} : {commentaire.texte}
-                                            </Text>
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
+                            publication={publication}
+                            source="ami"
+                        />
                     ))}
                 </View>
 
-                {/* Section publication */}
-
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
-                        Publication
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
+                        Mes publications
                     </Text>
 
                     <TouchableOpacity
-                        onPress={publier}
+                        onPress={publierDerniereSeance}
                         style={{
-                            backgroundColor: "#2EE6D6",
+                            backgroundColor: ui.accent,
                             borderRadius: 16,
                             padding: 16,
                             alignItems: "center",
+                            marginBottom: 14,
                         }}
                     >
-                        <Text style={{ color: "#070B14", fontWeight: "800", fontSize: 15 }}>
-                            Publier ma séance
+                        <Text
+                            style={{
+                                color: ui.accentText,
+                                fontWeight: "800",
+                                fontSize: 15,
+                            }}
+                        >
+                            Publier ma dernière séance
                         </Text>
                     </TouchableOpacity>
+
+                    {publicationsPerso.length === 0 && (
+                        <Text style={{ color: ui.textMuted, fontSize: 15 }}>
+                            Tu n’as pas encore publié de séance.
+                        </Text>
+                    )}
+
+                    {publicationsPerso.map((publication) => (
+                        <CardPublication
+                            key={publication.id}
+                            publication={publication}
+                            source="perso"
+                        />
+                    ))}
+                </View>
+
+                <View
+                    style={{
+                        backgroundColor: ui.cardBackground,
+                        borderRadius: 20,
+                        padding: 18,
+                        borderWidth: 1,
+                        borderColor: ui.border,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
+                        Résumé rapide
+                    </Text>
+
+                    <View
+                        style={{
+                            backgroundColor: ui.cardSecondary,
+                            borderRadius: 16,
+                            padding: 16,
+                            marginBottom: 10,
+                        }}
+                    >
+                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
+                            Total de tes séances
+                        </Text>
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 22,
+                                fontWeight: "800",
+                            }}
+                        >
+                            {workoutsPerso.length}
+                        </Text>
+                    </View>
+
+                    <View
+                        style={{
+                            backgroundColor: ui.cardSecondary,
+                            borderRadius: 16,
+                            padding: 16,
+                            marginBottom: 10,
+                        }}
+                    >
+                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
+                            Dernière séance
+                        </Text>
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 16,
+                                fontWeight: "700",
+                            }}
+                        >
+                            {workoutsPerso[0]
+                                ? `${workoutsPerso[0].title} • ${formaterTemps(workoutsPerso[0].date)}`
+                                : "Aucune"}
+                        </Text>
+                    </View>
+
+                    <View
+                        style={{
+                            backgroundColor: ui.cardSecondary,
+                            borderRadius: 16,
+                            padding: 16,
+                        }}
+                    >
+                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
+                            Feed total
+                        </Text>
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 22,
+                                fontWeight: "800",
+                            }}
+                        >
+                            {feedComplet.length}
+                        </Text>
+                    </View>
                 </View>
             </ScrollView>
         </View>

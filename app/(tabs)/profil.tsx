@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Calendar } from "react-native-calendars";
+import { Colors } from "@/constants/theme";
+import { useTheme } from "@/context/context";
 
 type Exercice = {
     id: string;
@@ -70,6 +72,24 @@ const workoutsParDate: WorkoutsParDate = {
 };
 
 export default function ProfileScreen() {
+    const { theme } = useTheme();
+    const colors = Colors[theme];
+
+    const ui = {
+        screenBackground: colors.background,
+        textPrimary: colors.text,
+        textMuted: theme === "dark" ? "#7C8799" : "#6B7280",
+        textSecondary: theme === "dark" ? "#93A1B5" : "#5F6B7A",
+        cardBackground: theme === "dark" ? "#0D1524" : "#F4F7FB",
+        cardSecondary: theme === "dark" ? "#121C2D" : "#E9EEF5",
+        cardTertiary: theme === "dark" ? "#182335" : "#DCE6F5",
+        border: theme === "dark" ? "#162033" : "#D8E0EA",
+        accent: "#2EE6D6",
+        accentText: "#070B14",
+        badgeText: theme === "dark" ? "#7DD3FC" : "#0a7ea4",
+        disabledText: theme === "dark" ? "#3A465C" : "#A0AEC0",
+    };
+
     const today = "2026-03-13";
 
     const [dateChoisie, setDateChoisie] = useState<string>(today);
@@ -104,14 +124,14 @@ export default function ProfileScreen() {
     for (const date in workoutsParDate) {
         markedDates[date] = {
             marked: true,
-            dotColor: "#2EE6D6",
+            dotColor: ui.accent,
         };
     }
 
     markedDates[dateChoisie] = {
         ...(markedDates[dateChoisie] || {}),
         selected: true,
-        selectedColor: "#2EE6D6",
+        selectedColor: ui.accent,
     };
 
     let workoutChoisi: WorkoutJour | null = null;
@@ -139,24 +159,29 @@ export default function ProfileScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: "#070B14" }}>
+        <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
             <ScrollView
                 style={{ flex: 1 }}
                 contentContainerStyle={{ padding: 20, paddingTop: 30, paddingBottom: 140 }}
             >
-                <Text style={{ color: "white", fontSize: 34, fontWeight: "800", marginBottom: 18 }}>
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 34,
+                        fontWeight: "800",
+                        marginBottom: 18,
+                    }}
+                >
                     Profil
                 </Text>
 
-                {/* Haut du profil */}
-
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 20,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                         alignItems: "center",
                     }}
@@ -166,52 +191,82 @@ export default function ProfileScreen() {
                             width: 92,
                             height: 92,
                             borderRadius: 46,
-                            backgroundColor: "#2EE6D6",
+                            backgroundColor: ui.accent,
                             alignItems: "center",
                             justifyContent: "center",
                             marginBottom: 14,
                         }}
                     >
-                        <Text style={{ fontSize: 30, fontWeight: "900", color: "#070B14" }}>
+                        <Text
+                            style={{
+                                fontSize: 30,
+                                fontWeight: "900",
+                                color: ui.accentText,
+                            }}
+                        >
                             J
                         </Text>
                     </View>
 
-                    <Text style={{ color: "white", fontSize: 24, fontWeight: "800", marginBottom: 4 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 24,
+                            fontWeight: "800",
+                            marginBottom: 4,
+                        }}
+                    >
                         Jougbouny
                     </Text>
 
-                    <Text style={{ color: "#7C8799", fontSize: 15, marginBottom: 10 }}>
+                    <Text
+                        style={{
+                            color: ui.textMuted,
+                            fontSize: 15,
+                            marginBottom: 10,
+                        }}
+                    >
                         @jougbounyfit
                     </Text>
 
                     <View
                         style={{
-                            backgroundColor: "#121C2D",
+                            backgroundColor: ui.cardSecondary,
                             borderRadius: 999,
                             paddingVertical: 10,
                             paddingHorizontal: 18,
                         }}
                     >
-                        <Text style={{ color: "#7DD3FC", fontSize: 15, fontWeight: "800" }}>
+                        <Text
+                            style={{
+                                color: ui.badgeText,
+                                fontSize: 15,
+                                fontWeight: "800",
+                            }}
+                        >
                             Diamant
                         </Text>
                     </View>
                 </View>
 
-                {/* Stats */}
-
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
                         Mes stats
                     </Text>
 
@@ -219,29 +274,45 @@ export default function ProfileScreen() {
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 16,
                             }}
                         >
-                            <Text style={{ color: "white", fontSize: 24, fontWeight: "800" }}>
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontSize: 24,
+                                    fontWeight: "800",
+                                }}
+                            >
                                 {totalWorkouts}
                             </Text>
-                            <Text style={{ color: "#7C8799", marginTop: 4 }}>Workouts complétés</Text>
+                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
+                                Workouts complétés
+                            </Text>
                         </View>
 
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 16,
                             }}
                         >
-                            <Text style={{ color: "white", fontSize: 24, fontWeight: "800" }}>
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontSize: 24,
+                                    fontWeight: "800",
+                                }}
+                            >
                                 {joursActifs}
                             </Text>
-                            <Text style={{ color: "#7C8799", marginTop: 4 }}>Jours actifs</Text>
+                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
+                                Jours actifs
+                            </Text>
                         </View>
                     </View>
 
@@ -249,46 +320,63 @@ export default function ProfileScreen() {
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 16,
                             }}
                         >
-                            <Text style={{ color: "white", fontSize: 24, fontWeight: "800" }}>
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontSize: 24,
+                                    fontWeight: "800",
+                                }}
+                            >
                                 {amis}
                             </Text>
-                            <Text style={{ color: "#7C8799", marginTop: 4 }}>Amis</Text>
+                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>Amis</Text>
                         </View>
 
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 16,
                             }}
                         >
-                            <Text style={{ color: "white", fontSize: 24, fontWeight: "800" }}>
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontSize: 24,
+                                    fontWeight: "800",
+                                }}
+                            >
                                 {streak}
                             </Text>
-                            <Text style={{ color: "#7C8799", marginTop: 4 }}>Streak</Text>
+                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>Streak</Text>
                         </View>
                     </View>
                 </View>
 
-                {/* Calendrier + liste */}
-
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
                         Workouts complétés
                     </Text>
 
@@ -300,16 +388,16 @@ export default function ProfileScreen() {
                         hideExtraDays={false}
                         firstDay={1}
                         theme={{
-                            backgroundColor: "#0D1524",
-                            calendarBackground: "#0D1524",
-                            textSectionTitleColor: "#7C8799",
-                            selectedDayBackgroundColor: "#2EE6D6",
-                            selectedDayTextColor: "#070B14",
-                            todayTextColor: "#2EE6D6",
-                            dayTextColor: "#FFFFFF",
-                            textDisabledColor: "#3A465C",
-                            monthTextColor: "#FFFFFF",
-                            arrowColor: "#2EE6D6",
+                            backgroundColor: ui.cardBackground,
+                            calendarBackground: ui.cardBackground,
+                            textSectionTitleColor: ui.textMuted,
+                            selectedDayBackgroundColor: ui.accent,
+                            selectedDayTextColor: ui.accentText,
+                            todayTextColor: ui.accent,
+                            dayTextColor: ui.textPrimary,
+                            textDisabledColor: ui.disabledText,
+                            monthTextColor: ui.textPrimary,
+                            arrowColor: ui.accent,
                         }}
                         style={{
                             borderRadius: 16,
@@ -318,7 +406,7 @@ export default function ProfileScreen() {
                     />
 
                     {workoutsDuJour.length === 0 && (
-                        <Text style={{ color: "#7C8799", fontSize: 15 }}>
+                        <Text style={{ color: ui.textMuted, fontSize: 15 }}>
                             Aucun workout pour cette date
                         </Text>
                     )}
@@ -331,7 +419,9 @@ export default function ProfileScreen() {
                                     onPress={() => choisirWorkout(workout.id)}
                                     style={{
                                         backgroundColor:
-                                            workoutChoisiId === workout.id ? "#2EE6D6" : "#121C2D",
+                                            workoutChoisiId === workout.id
+                                                ? ui.accent
+                                                : ui.cardSecondary,
                                         borderRadius: 16,
                                         padding: 16,
                                         marginBottom: 12,
@@ -339,7 +429,10 @@ export default function ProfileScreen() {
                                 >
                                     <Text
                                         style={{
-                                            color: workoutChoisiId === workout.id ? "#070B14" : "white",
+                                            color:
+                                                workoutChoisiId === workout.id
+                                                    ? ui.accentText
+                                                    : ui.textPrimary,
                                             fontSize: 16,
                                             fontWeight: "700",
                                         }}
@@ -352,7 +445,7 @@ export default function ProfileScreen() {
                             {workoutChoisi && (
                                 <View
                                     style={{
-                                        backgroundColor: "#121C2D",
+                                        backgroundColor: ui.cardSecondary,
                                         borderRadius: 16,
                                         padding: 16,
                                         marginTop: 4,
@@ -360,7 +453,7 @@ export default function ProfileScreen() {
                                 >
                                     <Text
                                         style={{
-                                            color: "white",
+                                            color: ui.textPrimary,
                                             fontSize: 21,
                                             fontWeight: "800",
                                             marginBottom: 14,
@@ -373,13 +466,18 @@ export default function ProfileScreen() {
                                         <View
                                             key={exercice.id}
                                             style={{
-                                                backgroundColor: "#182335",
+                                                backgroundColor: ui.cardTertiary,
                                                 borderRadius: 12,
                                                 padding: 14,
                                                 marginBottom: 10,
                                             }}
                                         >
-                                            <Text style={{ color: "white", fontSize: 15 }}>
+                                            <Text
+                                                style={{
+                                                    color: ui.textPrimary,
+                                                    fontSize: 15,
+                                                }}
+                                            >
                                                 {exercice.label}
                                             </Text>
                                         </View>
@@ -390,115 +488,159 @@ export default function ProfileScreen() {
                     )}
                 </View>
 
-                {/* Objectif */}
-
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
                         Objectif actuel
                     </Text>
 
                     <View
                         style={{
-                            backgroundColor: "#121C2D",
+                            backgroundColor: ui.cardSecondary,
                             borderRadius: 16,
                             padding: 16,
                         }}
                     >
-                        <Text style={{ color: "white", fontSize: 16, lineHeight: 24 }}>
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 16,
+                                lineHeight: 24,
+                            }}
+                        >
                             Perdre du gras / gagner en discipline
                         </Text>
                     </View>
                 </View>
 
-                {/* Badges */}
-
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 14 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
                         Badges
                     </Text>
 
                     <View
                         style={{
-                            backgroundColor: "#121C2D",
+                            backgroundColor: ui.cardSecondary,
                             borderRadius: 16,
                             padding: 16,
                             marginBottom: 10,
                         }}
                     >
-                        <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 16,
+                                fontWeight: "700",
+                            }}
+                        >
                             🔥 7 jours d’affilée
                         </Text>
                     </View>
 
                     <View
                         style={{
-                            backgroundColor: "#121C2D",
+                            backgroundColor: ui.cardSecondary,
                             borderRadius: 16,
                             padding: 16,
                             marginBottom: 10,
                         }}
                     >
-                        <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 16,
+                                fontWeight: "700",
+                            }}
+                        >
                             ✅ Premier workout
                         </Text>
                     </View>
 
                     <View
                         style={{
-                            backgroundColor: "#121C2D",
+                            backgroundColor: ui.cardSecondary,
                             borderRadius: 16,
                             padding: 16,
                         }}
                     >
-                        <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 16,
+                                fontWeight: "700",
+                            }}
+                        >
                             💯 100 exercices
                         </Text>
                     </View>
                 </View>
 
-                {/* Boutons bas */}
-
                 <TouchableOpacity
                     style={{
-                        backgroundColor: "#2EE6D6",
+                        backgroundColor: ui.accent,
                         borderRadius: 16,
                         padding: 16,
                         alignItems: "center",
                         marginBottom: 12,
                     }}
                 >
-                    <Text style={{ color: "#070B14", fontWeight: "800", fontSize: 15 }}>
+                    <Text
+                        style={{
+                            color: ui.accentText,
+                            fontWeight: "800",
+                            fontSize: 15,
+                        }}
+                    >
                         Modifier le profil
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={{
-                        backgroundColor: "#121C2D",
+                        backgroundColor: ui.cardSecondary,
                         borderRadius: 16,
                         padding: 16,
                         alignItems: "center",
                     }}
                 >
-                    <Text style={{ color: "white", fontWeight: "800", fontSize: 15 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontWeight: "800",
+                            fontSize: 15,
+                        }}
+                    >
                         Paramètres
                     </Text>
                 </TouchableOpacity>

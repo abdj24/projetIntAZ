@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {ScrollView, Text, TextInput, TouchableOpacity, View} from "react-native";
+import { Colors } from "@/constants/theme";
+import { useTheme } from "@/context/context";
 
 type Categorie = "Questions" | "Planifications" | "Régime" | null;
 
-// Choix de réponses
 type ChoixQuestion =
     | "Comment perdre du gras"
     | "Comment prendre du muscle"
@@ -16,11 +17,7 @@ type ChoixPlanification =
     | "Plan 5 jours"
     | null;
 
-type ChoixRegime =
-    | "Cut"
-    | "Maintien"
-    | "Bulk"
-    | null;
+type ChoixRegime = "Cut" | "Maintien" | "Bulk" | null;
 
 type Message = {
     id: string;
@@ -28,10 +25,29 @@ type Message = {
     texte: string;
 };
 
-// Operations (logique)
-
-export default function AssistantScreen() {
+export default function AssistantEcran() {
     const scrollRef = useRef<ScrollView | null>(null);
+
+    const { theme } = useTheme();
+    const colors = Colors[theme];
+
+    const ui = {
+        screenBackground: colors.background,
+        textPrimary: colors.text,
+        textMuted: theme === "dark" ? "#7C8799" : "#6B7280",
+        textSecondary: theme === "dark" ? "#93A1B5" : "#5F6B7A",
+        cardBackground: theme === "dark" ? "#0D1524" : "#F4F7FB",
+        cardSecondary: theme === "dark" ? "#121C2D" : "#E9EEF5",
+        border: theme === "dark" ? "#162033" : "#D8E0EA",
+        accent: "#2EE6D6",
+        accentText: "#070B14",
+        inputBackground: theme === "dark" ? "#121C2D" : "#FFFFFF",
+        assistantBubble: theme === "dark" ? "#0D1524" : "#F4F7FB",
+        userBubble: "#2EE6D6",
+        assistantLabel: "#2EE6D6",
+        assistantText: theme === "dark" ? "#FFFFFF" : colors.text,
+        userText: "#070B14",
+    };
 
     const [categorieChoisie, setCategorieChoisie] = useState<Categorie>(null);
     const [choixQuestion, setChoixQuestion] = useState<ChoixQuestion>(null);
@@ -39,6 +55,8 @@ export default function AssistantScreen() {
     const [choixRegime, setChoixRegime] = useState<ChoixRegime>(null);
 
     const [texteEntree, setTexteEntree] = useState("");
+    const [demandePoids, setDemandePoids] = useState(false);
+
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "m1",
@@ -49,55 +67,56 @@ export default function AssistantScreen() {
 
     function allerEnBas() {
         setTimeout(() => {
-            if (scrollRef.current) {
-                scrollRef.current.scrollToEnd({ animated: true });
-            }
+            scrollRef.current?.scrollToEnd({ animated: true });
         }, 100);
     }
 
-    function ajouterMessageAssistant(texte: string) {
+    function ajouterMessage(auteur: "assistant" | "user", texte: string) {
         const nouveauMessage: Message = {
             id: Date.now().toString() + Math.random().toString(),
-            auteur: "assistant",
-            texte: texte,
+            auteur,
+            texte,
         };
 
         setMessages((prev) => [...prev, nouveauMessage]);
         allerEnBas();
     }
 
-    function ajouterMessageUser(texte: string) {
-        const nouveauMessage: Message = {
-            id: Date.now().toString() + Math.random().toString(),
-            auteur: "user",
-            texte: texte,
-        };
-
-        setMessages((prev) => [...prev, nouveauMessage]);
-        allerEnBas();
-    }
-
-    function choisirCategorie(categorie: Categorie) {
-        setCategorieChoisie(categorie);
+    function resetChoixSecondaires() {
         setChoixQuestion(null);
         setChoixPlanification(null);
         setChoixRegime(null);
         setTexteEntree("");
+        setDemandePoids(false);
+    }
 
-        if (categorie !== null) {
-            ajouterMessageUser(categorie);
+    function choisirCategorie(categorie: Categorie) {
+        setCategorieChoisie(categorie);
+        resetChoixSecondaires();
+
+        if (categorie) {
+            ajouterMessage("user", categorie);
         }
 
         if (categorie === "Questions") {
-            ajouterMessageAssistant("Choisis une question et je vais te répondre clairement.");
+            ajouterMessage(
+                "assistant",
+                "Choisis une question et je vais te répondre plus clairement."
+            );
         }
 
         if (categorie === "Planifications") {
-            ajouterMessageAssistant("Choisis un type de planification et je vais te proposer un programme.");
+            ajouterMessage(
+                "assistant",
+                "Choisis un plan et je vais te proposer une structure simple et efficace."
+            );
         }
 
         if (categorie === "Régime") {
-            ajouterMessageAssistant("Choisis un objectif alimentaire. Si besoin, je te demanderai une valeur.");
+            ajouterMessage(
+                "assistant",
+                "Choisis ton objectif alimentaire. Ensuite je te demanderai ton poids pour faire un petit calcul."
+            );
         }
     }
 
@@ -105,25 +124,28 @@ export default function AssistantScreen() {
         setChoixQuestion(question);
         setTexteEntree("");
 
-        if (question !== null) {
-            ajouterMessageUser(question);
-        }
+        if (!question) return;
+
+        ajouterMessage("user", question);
 
         if (question === "Comment perdre du gras") {
-            ajouterMessageAssistant(
-                "Pour perdre du gras efficacement : mange un peu moins de calories, garde beaucoup de protéines, marche plus, et reste constant plusieurs semaines."
+            ajouterMessage(
+                "assistant",
+                "Pour perdre du gras :\n\n- mange un peu moins de calories\n- garde beaucoup de protéines\n- marche plus\n- fais de la musculation\n- reste constant plusieurs semaines\n\nLe plus important, ce n’est pas être parfait 2 jours. C’est être sérieux longtemps."
             );
         }
 
         if (question === "Comment prendre du muscle") {
-            ajouterMessageAssistant(
-                "Pour prendre du muscle : fais une surcharge progressive, mange assez de protéines, dors bien et garde un léger surplus calorique."
+            ajouterMessage(
+                "assistant",
+                "Pour prendre du muscle :\n\n- entraîne-toi avec progression\n- mange assez de protéines\n- dors bien\n- garde un léger surplus calorique\n- répète les mêmes exercices assez longtemps pour progresser\n\nSans progression à l’entraînement, tu limites beaucoup les résultats."
             );
         }
 
         if (question === "Comment rester motivé") {
-            ajouterMessageAssistant(
-                "La motivation aide, mais la discipline est plus importante. Fixe-toi un horaire simple, commence petit et répète."
+            ajouterMessage(
+                "assistant",
+                "La motivation monte et descend. Ce qu’il te faut surtout, c’est une routine.\n\n- fixe des jours précis\n- commence petit\n- note tes progrès\n- évite de négocier avec toi-même\n- pense long terme\n\nLa discipline bat la motivation."
             );
         }
     }
@@ -132,25 +154,28 @@ export default function AssistantScreen() {
         setChoixPlanification(plan);
         setTexteEntree("");
 
-        if (plan !== null) {
-            ajouterMessageUser(plan);
-        }
+        if (!plan) return;
+
+        ajouterMessage("user", plan);
 
         if (plan === "Plan 3 jours") {
-            ajouterMessageAssistant(
-                "Plan 3 jours :\n\nJour 1 : Haut du corps\nJour 2 : Bas du corps\nJour 3 : Cardio + abdos\n\nC’est simple et efficace pour commencer."
+            ajouterMessage(
+                "assistant",
+                "Plan 3 jours :\n\nJour 1 : Haut du corps\nJour 2 : Bas du corps\nJour 3 : Cardio + abdos\n\nC’est un bon choix pour débuter ou reprendre sérieusement."
             );
         }
 
         if (plan === "Plan 4 jours") {
-            ajouterMessageAssistant(
-                "Plan 4 jours :\n\nJour 1 : Push\nJour 2 : Pull\nJour 3 : Legs\nJour 4 : Cardio + core\n\nBon équilibre entre récupération et progression."
+            ajouterMessage(
+                "assistant",
+                "Plan 4 jours :\n\nJour 1 : Push\nJour 2 : Pull\nJour 3 : Legs\nJour 4 : Cardio + core\n\nTrès bon équilibre entre progression et récupération."
             );
         }
 
         if (plan === "Plan 5 jours") {
-            ajouterMessageAssistant(
-                "Plan 5 jours :\n\nJour 1 : Pectoraux / triceps\nJour 2 : Dos / biceps\nJour 3 : Jambes\nJour 4 : Épaules / abdos\nJour 5 : Cardio ou rappel point faible"
+            ajouterMessage(
+                "assistant",
+                "Plan 5 jours :\n\nJour 1 : Pecs / triceps\nJour 2 : Dos / biceps\nJour 3 : Jambes\nJour 4 : Épaules / abdos\nJour 5 : Cardio ou rappel point faible\n\nC’est bien si tu es déjà régulier."
             );
         }
     }
@@ -158,84 +183,115 @@ export default function AssistantScreen() {
     function choisirRegime(regime: ChoixRegime) {
         setChoixRegime(regime);
         setTexteEntree("");
+        setDemandePoids(false);
 
-        if (regime !== null) {
-            ajouterMessageUser(regime);
-        }
+        if (!regime) return;
+
+        ajouterMessage("user", regime);
 
         if (regime === "Cut") {
-            ajouterMessageAssistant(
-                "Objectif cut choisi. Combien de kilos veux-tu perdre ? Écris seulement le nombre."
+            ajouterMessage(
+                "assistant",
+                "Objectif cut choisi. Entre ton poids en kg et je vais te donner une estimation simple de calories et protéines."
             );
+            setDemandePoids(true);
         }
 
         if (regime === "Maintien") {
-            ajouterMessageAssistant(
-                "Objectif maintien choisi. Tu peux viser une alimentation stable avec protéines élevées, glucides modérés et repas réguliers."
+            ajouterMessage(
+                "assistant",
+                "Objectif maintien choisi. Entre ton poids en kg et je vais te donner une estimation simple."
             );
+            setDemandePoids(true);
         }
 
         if (regime === "Bulk") {
-            ajouterMessageAssistant(
-                "Objectif bulk choisi. Tu peux viser un léger surplus calorique, beaucoup de protéines et une progression régulière à l’entraînement."
+            ajouterMessage(
+                "assistant",
+                "Objectif bulk choisi. Entre ton poids en kg et je vais te donner une estimation simple."
             );
+            setDemandePoids(true);
         }
     }
 
-    function envoyerValeur() {
+    function envoyerPoids() {
         if (texteEntree.trim() === "") {
             return;
         }
 
-        ajouterMessageUser(texteEntree);
+        ajouterMessage("user", texteEntree);
 
-        if (choixRegime === "Cut") {
-            const kilos = parseFloat(texteEntree);
+        const poids = parseFloat(texteEntree);
 
-            if (isNaN(kilos) || kilos <= 0) {
-                ajouterMessageAssistant("Entre un nombre valide de kilos à perdre.");
-                setTexteEntree("");
-                return;
-            }
-
-            if (kilos <= 3) {
-                ajouterMessageAssistant(
-                    "Pour perdre " +
-                    kilos +
-                    " kg :\n\n- déficit léger\n- beaucoup de protéines\n- légumes à chaque repas\n- marche quotidienne\n- 3 à 4 séances par semaine\n\nC’est l’approche la plus efficace pour perdre sans trop sacrifier le muscle."
-                );
-            } else if (kilos <= 8) {
-                ajouterMessageAssistant(
-                    "Pour perdre " +
-                    kilos +
-                    " kg :\n\n- déficit modéré\n- repas simples et répétables\n- protéines élevées\n- réduire boissons sucrées et snacks\n- 8 000 à 10 000 pas par jour\n- 4 entraînements par semaine\n\nLe plus important sera la constance."
-                );
-            } else {
-                ajouterMessageAssistant(
-                    "Pour perdre " +
-                    kilos +
-                    " kg :\n\n- vise une perte progressive\n- déficit raisonnable, pas extrême\n- protéines élevées\n- beaucoup d’eau\n- cardio léger régulier\n- suivi du poids chaque semaine\n\nNe coupe pas trop brutalement, sinon tu risques de craquer."
-                );
-            }
-
+        if (isNaN(poids) || poids <= 0 || poids > 400) {
+            ajouterMessage("assistant", "Entre un poids valide en kg.");
             setTexteEntree("");
             return;
         }
 
-        ajouterMessageAssistant("Choisis d’abord une option qui demande une valeur.");
+        const maintien = poids * 33;
+        let calories = maintien;
+        let proteines = poids * 2;
+        let conseil = "";
+
+        if (choixRegime === "Cut") {
+            calories = maintien - 400;
+            proteines = poids * 2.2;
+            conseil =
+                "Vise une perte progressive, garde beaucoup de protéines et évite de couper trop brutalement.";
+        }
+
+        if (choixRegime === "Maintien") {
+            calories = maintien;
+            proteines = poids * 2;
+            conseil =
+                "Le maintien est utile pour stabiliser ton poids, mieux récupérer et progresser proprement.";
+        }
+
+        if (choixRegime === "Bulk") {
+            calories = maintien + 300;
+            proteines = poids * 2;
+            conseil =
+                "Vise une prise de masse lente. Si tu montes trop vite, tu prendras surtout du gras.";
+        }
+
+        ajouterMessage(
+            "assistant",
+            "Voici ton estimation 👇\n\n" +
+            "Poids : " +
+            poids +
+            " kg\n" +
+            "Calories de maintien estimées : " +
+            Math.round(maintien) +
+            " kcal\n" +
+            "Calories pour ton objectif : " +
+            Math.round(calories) +
+            " kcal\n" +
+            "Protéines recommandées : " +
+            Math.round(proteines) +
+            " g / jour\n\n" +
+            conseil
+        );
+
         setTexteEntree("");
+        setDemandePoids(false);
     }
 
-
-    // Fonctions textes pour affichage
     return (
-        <View style={{ flex: 1, backgroundColor: "#070B14" }}>
+        <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
             <View style={{ padding: 20, paddingTop: 30, paddingBottom: 10 }}>
-                <Text style={{ color: "white", fontSize: 34, fontWeight: "800", marginBottom: 8 }}>
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 34,
+                        fontWeight: "800",
+                        marginBottom: 8,
+                    }}
+                >
                     Assistant
                 </Text>
 
-                <Text style={{ color: "#7C8799", fontSize: 15 }}>
+                <Text style={{ color: ui.textMuted, fontSize: 15 }}>
                     Conseils, planifications et régime
                 </Text>
             </View>
@@ -244,11 +300,7 @@ export default function AssistantScreen() {
                 ref={scrollRef}
                 style={{ flex: 1 }}
                 contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
-                onContentSizeChange={() => {
-                    if (scrollRef.current) {
-                        scrollRef.current.scrollToEnd({ animated: true });
-                    }
-                }}
+                onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
             >
                 {messages.map((message) => (
                     <View
@@ -260,17 +312,23 @@ export default function AssistantScreen() {
                     >
                         <View
                             style={{
-                                backgroundColor: message.auteur === "assistant" ? "#0D1524" : "#2EE6D6",
+                                backgroundColor:
+                                    message.auteur === "assistant"
+                                        ? ui.assistantBubble
+                                        : ui.userBubble,
                                 borderRadius: 20,
                                 padding: 16,
                                 maxWidth: "85%",
                                 borderWidth: message.auteur === "assistant" ? 1 : 0,
-                                borderColor: "#162033",
+                                borderColor: ui.border,
                             }}
                         >
                             <Text
                                 style={{
-                                    color: message.auteur === "assistant" ? "#2EE6D6" : "#070B14",
+                                    color:
+                                        message.auteur === "assistant"
+                                            ? ui.assistantLabel
+                                            : ui.userText,
                                     fontSize: 13,
                                     fontWeight: "700",
                                     marginBottom: 6,
@@ -281,7 +339,10 @@ export default function AssistantScreen() {
 
                             <Text
                                 style={{
-                                    color: message.auteur === "assistant" ? "white" : "#070B14",
+                                    color:
+                                        message.auteur === "assistant"
+                                            ? ui.assistantText
+                                            : ui.userText,
                                     fontSize: 16,
                                     lineHeight: 22,
                                 }}
@@ -294,11 +355,11 @@ export default function AssistantScreen() {
 
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginTop: 8,
                         marginBottom: 16,
                     }}
@@ -308,7 +369,10 @@ export default function AssistantScreen() {
                             key={categorie ?? ""}
                             onPress={() => choisirCategorie(categorie)}
                             style={{
-                                backgroundColor: categorieChoisie === categorie ? "#2EE6D6" : "#121C2D",
+                                backgroundColor:
+                                    categorieChoisie === categorie
+                                        ? ui.accent
+                                        : ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 16,
                                 marginBottom: 12,
@@ -316,7 +380,10 @@ export default function AssistantScreen() {
                         >
                             <Text
                                 style={{
-                                    color: categorieChoisie === categorie ? "#070B14" : "white",
+                                    color:
+                                        categorieChoisie === categorie
+                                            ? ui.accentText
+                                            : ui.textPrimary,
                                     fontSize: 16,
                                     fontWeight: "700",
                                 }}
@@ -330,11 +397,11 @@ export default function AssistantScreen() {
                 {categorieChoisie === "Questions" && (
                     <View
                         style={{
-                            backgroundColor: "#0D1524",
+                            backgroundColor: ui.cardBackground,
                             borderRadius: 20,
                             padding: 18,
                             borderWidth: 1,
-                            borderColor: "#162033",
+                            borderColor: ui.border,
                             marginBottom: 16,
                         }}
                     >
@@ -349,7 +416,10 @@ export default function AssistantScreen() {
                                 key={question ?? ""}
                                 onPress={() => choisirQuestion(question)}
                                 style={{
-                                    backgroundColor: choixQuestion === question ? "#2EE6D6" : "#121C2D",
+                                    backgroundColor:
+                                        choixQuestion === question
+                                            ? ui.accent
+                                            : ui.cardSecondary,
                                     borderRadius: 16,
                                     padding: 16,
                                     marginBottom: 12,
@@ -357,7 +427,10 @@ export default function AssistantScreen() {
                             >
                                 <Text
                                     style={{
-                                        color: choixQuestion === question ? "#070B14" : "white",
+                                        color:
+                                            choixQuestion === question
+                                                ? ui.accentText
+                                                : ui.textPrimary,
                                         fontSize: 15,
                                         fontWeight: "700",
                                     }}
@@ -372,11 +445,11 @@ export default function AssistantScreen() {
                 {categorieChoisie === "Planifications" && (
                     <View
                         style={{
-                            backgroundColor: "#0D1524",
+                            backgroundColor: ui.cardBackground,
                             borderRadius: 20,
                             padding: 18,
                             borderWidth: 1,
-                            borderColor: "#162033",
+                            borderColor: ui.border,
                             marginBottom: 16,
                         }}
                     >
@@ -386,7 +459,10 @@ export default function AssistantScreen() {
                                     key={plan ?? ""}
                                     onPress={() => choisirPlanification(plan)}
                                     style={{
-                                        backgroundColor: choixPlanification === plan ? "#2EE6D6" : "#121C2D",
+                                        backgroundColor:
+                                            choixPlanification === plan
+                                                ? ui.accent
+                                                : ui.cardSecondary,
                                         borderRadius: 16,
                                         padding: 16,
                                         marginBottom: 12,
@@ -394,7 +470,10 @@ export default function AssistantScreen() {
                                 >
                                     <Text
                                         style={{
-                                            color: choixPlanification === plan ? "#070B14" : "white",
+                                            color:
+                                                choixPlanification === plan
+                                                    ? ui.accentText
+                                                    : ui.textPrimary,
                                             fontSize: 15,
                                             fontWeight: "700",
                                         }}
@@ -410,11 +489,11 @@ export default function AssistantScreen() {
                 {categorieChoisie === "Régime" && (
                     <View
                         style={{
-                            backgroundColor: "#0D1524",
+                            backgroundColor: ui.cardBackground,
                             borderRadius: 20,
                             padding: 18,
                             borderWidth: 1,
-                            borderColor: "#162033",
+                            borderColor: ui.border,
                             marginBottom: 16,
                         }}
                     >
@@ -423,7 +502,10 @@ export default function AssistantScreen() {
                                 key={regime ?? ""}
                                 onPress={() => choisirRegime(regime)}
                                 style={{
-                                    backgroundColor: choixRegime === regime ? "#2EE6D6" : "#121C2D",
+                                    backgroundColor:
+                                        choixRegime === regime
+                                            ? ui.accent
+                                            : ui.cardSecondary,
                                     borderRadius: 16,
                                     padding: 16,
                                     marginBottom: 12,
@@ -431,7 +513,10 @@ export default function AssistantScreen() {
                             >
                                 <Text
                                     style={{
-                                        color: choixRegime === regime ? "#070B14" : "white",
+                                        color:
+                                            choixRegime === regime
+                                                ? ui.accentText
+                                                : ui.textPrimary,
                                         fontSize: 15,
                                         fontWeight: "700",
                                     }}
@@ -441,33 +526,40 @@ export default function AssistantScreen() {
                             </TouchableOpacity>
                         ))}
 
-                        {choixRegime === "Cut" && (
+                        {demandePoids && (
                             <View style={{ marginTop: 8 }}>
                                 <TextInput
                                     value={texteEntree}
                                     onChangeText={setTexteEntree}
-                                    placeholder="Entre le nombre de kilos"
-                                    placeholderTextColor="#7C8799"
+                                    placeholder="Entre ton poids en kg"
+                                    placeholderTextColor={ui.textMuted}
                                     keyboardType="numeric"
                                     style={{
-                                        backgroundColor: "#121C2D",
-                                        color: "white",
+                                        backgroundColor: ui.inputBackground,
+                                        color: ui.textPrimary,
                                         borderRadius: 16,
                                         padding: 16,
                                         marginBottom: 12,
+                                        borderWidth: 1,
+                                        borderColor: ui.border,
                                     }}
                                 />
 
                                 <TouchableOpacity
-                                    onPress={envoyerValeur}
+                                    onPress={envoyerPoids}
                                     style={{
-                                        backgroundColor: "#2EE6D6",
+                                        backgroundColor: ui.accent,
                                         borderRadius: 16,
                                         padding: 16,
                                         alignItems: "center",
                                     }}
                                 >
-                                    <Text style={{ color: "#070B14", fontWeight: "800" }}>
+                                    <Text
+                                        style={{
+                                            color: ui.accentText,
+                                            fontWeight: "800",
+                                        }}
+                                    >
                                         Envoyer
                                     </Text>
                                 </TouchableOpacity>

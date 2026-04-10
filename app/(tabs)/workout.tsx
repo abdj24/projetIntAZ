@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import {addSessionWorkout, getSessionWorkouts, subscribeSessionWorkouts,} from "@/data/workoutSession";
 import { getEffectiveToday, subscribeTodayOverride } from "@/data/testToday";
+import { Colors } from "@/constants/theme";
+import {useTheme} from "@/context/context";
 
 type TypeWorkout = "Haut du corps" | "Bas du corps" | "Cardio";
 
@@ -19,6 +21,27 @@ type HistoriqueWorkout = {
 };
 
 export default function WorkoutScreen() {
+    const { theme } = useTheme();
+    const colors = Colors[theme];
+
+    const ui = {
+        screenBackground: colors.background,
+        textPrimary: colors.text,
+        textMuted: theme === "dark" ? "#7C8799" : "#6B7280",
+        textSecondary: theme === "dark" ? "#93A1B5" : "#5F6B7A",
+        cardBackground: theme === "dark" ? "#0D1524" : "#F4F7FB",
+        cardSecondary: theme === "dark" ? "#121C2D" : "#E9EEF5",
+        cardTertiary: theme === "dark" ? "#182335" : "#DCE6F5",
+        selectedCard: theme === "dark" ? "#1A2740" : "#D7E7FA",
+        successCard: theme === "dark" ? "#163228" : "#DDF6E8",
+        successText: theme === "dark" ? "#35D07F" : "#1F9D5C",
+        border: theme === "dark" ? "#162033" : "#D8E0EA",
+        progressTrack: theme === "dark" ? "#162033" : "#D8E0EA",
+        accent: "#2EE6D6",
+        accentText: "#070B14",
+        overlay: theme === "dark" ? "#070B14" : "#FFFFFF",
+    };
+
     const [workoutChoisi, setWorkoutChoisi] = useState<TypeWorkout | null>(null);
     const [demarre, setDemarre] = useState(false);
     const [termine, setTermine] = useState(false);
@@ -168,32 +191,45 @@ export default function WorkoutScreen() {
     const dernierWorkout = sessionWorkouts.length > 0 ? sessionWorkouts[0] : null;
 
     return (
-        <View style={{ flex: 1, backgroundColor: "#070B14" }}>
+        <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
             <ScrollView
                 style={{ flex: 1 }}
                 contentContainerStyle={{ padding: 20, paddingTop: 30, paddingBottom: 140 }}
             >
-                <Text style={{ color: "white", fontSize: 34, fontWeight: "800", marginBottom: 8 }}>
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 34,
+                        fontWeight: "800",
+                        marginBottom: 8,
+                    }}
+                >
                     Workout
                 </Text>
 
-                <Text style={{ color: "#7C8799", fontSize: 15, marginBottom: 18 }}>
+                <Text
+                    style={{
+                        color: ui.textMuted,
+                        fontSize: 15,
+                        marginBottom: 18,
+                    }}
+                >
                     Choisis une séance
                 </Text>
 
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
                     <Text
                         style={{
-                            color: "white",
+                            color: ui.textPrimary,
                             fontSize: 18,
                             fontWeight: "700",
                             marginBottom: 14,
@@ -206,15 +242,15 @@ export default function WorkoutScreen() {
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 14,
                             }}
                         >
-                            <Text style={{ color: "#7C8799", fontSize: 13, marginBottom: 6 }}>
+                            <Text style={{ color: ui.textMuted, fontSize: 13, marginBottom: 6 }}>
                                 Total workouts
                             </Text>
-                            <Text style={{ color: "white", fontSize: 22, fontWeight: "800" }}>
+                            <Text style={{ color: ui.textPrimary, fontSize: 22, fontWeight: "800" }}>
                                 {totalWorkouts}
                             </Text>
                         </View>
@@ -222,15 +258,15 @@ export default function WorkoutScreen() {
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 14,
                             }}
                         >
-                            <Text style={{ color: "#7C8799", fontSize: 13, marginBottom: 6 }}>
+                            <Text style={{ color: ui.textMuted, fontSize: 13, marginBottom: 6 }}>
                                 Aujourd’hui
                             </Text>
-                            <Text style={{ color: "white", fontSize: 22, fontWeight: "800" }}>
+                            <Text style={{ color: ui.textPrimary, fontSize: 22, fontWeight: "800" }}>
                                 {workoutsAujourdhui}
                             </Text>
                         </View>
@@ -240,15 +276,15 @@ export default function WorkoutScreen() {
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 14,
                             }}
                         >
-                            <Text style={{ color: "#7C8799", fontSize: 13, marginBottom: 6 }}>
+                            <Text style={{ color: ui.textMuted, fontSize: 13, marginBottom: 6 }}>
                                 Exos complétés
                             </Text>
-                            <Text style={{ color: "white", fontSize: 22, fontWeight: "800" }}>
+                            <Text style={{ color: ui.textPrimary, fontSize: 22, fontWeight: "800" }}>
                                 {totalExercicesCompletes}
                             </Text>
                         </View>
@@ -256,15 +292,15 @@ export default function WorkoutScreen() {
                         <View
                             style={{
                                 flex: 1,
-                                backgroundColor: "#121C2D",
+                                backgroundColor: ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 14,
                             }}
                         >
-                            <Text style={{ color: "#7C8799", fontSize: 13, marginBottom: 6 }}>
+                            <Text style={{ color: ui.textMuted, fontSize: 13, marginBottom: 6 }}>
                                 Dernier workout
                             </Text>
-                            <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                            <Text style={{ color: ui.textPrimary, fontSize: 16, fontWeight: "700" }}>
                                 {dernierWorkout ? dernierWorkout.title : "Aucun"}
                             </Text>
                         </View>
@@ -273,11 +309,11 @@ export default function WorkoutScreen() {
 
                 <View
                     style={{
-                        backgroundColor: "#0D1524",
+                        backgroundColor: ui.cardBackground,
                         borderRadius: 20,
                         padding: 18,
                         borderWidth: 1,
-                        borderColor: "#162033",
+                        borderColor: ui.border,
                         marginBottom: 20,
                     }}
                 >
@@ -286,13 +322,20 @@ export default function WorkoutScreen() {
                             key={type}
                             onPress={() => choisirWorkout(type)}
                             style={{
-                                backgroundColor: workoutChoisi === type ? "#1A2740" : "#121C2D",
+                                backgroundColor:
+                                    workoutChoisi === type ? ui.selectedCard : ui.cardSecondary,
                                 borderRadius: 16,
                                 padding: 16,
                                 marginBottom: 12,
                             }}
                         >
-                            <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                }}
+                            >
                                 {type}
                             </Text>
                         </TouchableOpacity>
@@ -308,14 +351,14 @@ export default function WorkoutScreen() {
                                 key={exercice.id}
                                 onPress={() => basculerExercice(exercice.id)}
                                 style={{
-                                    backgroundColor: fait ? "#163228" : "#121C2D",
+                                    backgroundColor: fait ? ui.successCard : ui.cardSecondary,
                                     borderRadius: 16,
                                     padding: 16,
                                     marginBottom: 12,
                                     opacity: demarre ? 1 : 0.6,
                                 }}
                             >
-                                <Text style={{ color: "white", fontSize: 16 }}>
+                                <Text style={{ color: ui.textPrimary, fontSize: 16 }}>
                                     {exercice.label}
                                 </Text>
                             </TouchableOpacity>
@@ -330,12 +373,19 @@ export default function WorkoutScreen() {
                                 width: 120,
                                 height: 120,
                                 borderRadius: 60,
-                                backgroundColor: "#2EE6D6",
+                                backgroundColor: ui.accent,
                                 alignItems: "center",
                                 justifyContent: "center",
                             }}
                         >
-                            <Text style={{ fontWeight: "800" }}>DÉMARRER</Text>
+                            <Text
+                                style={{
+                                    fontWeight: "800",
+                                    color: ui.accentText,
+                                }}
+                            >
+                                DÉMARRER
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -343,18 +393,18 @@ export default function WorkoutScreen() {
                 {workoutChoisi && (
                     <View
                         style={{
-                            backgroundColor: "#0D1524",
+                            backgroundColor: ui.cardBackground,
                             borderRadius: 20,
                             padding: 18,
                             borderWidth: 1,
-                            borderColor: "#162033",
+                            borderColor: ui.border,
                             marginBottom: 20,
                             marginTop: 20,
                         }}
                     >
                         <Text
                             style={{
-                                color: "white",
+                                color: ui.textPrimary,
                                 fontSize: 18,
                                 fontWeight: "700",
                                 marginBottom: 10,
@@ -366,7 +416,7 @@ export default function WorkoutScreen() {
                         <View
                             style={{
                                 height: 10,
-                                backgroundColor: "#162033",
+                                backgroundColor: ui.progressTrack,
                                 borderRadius: 999,
                                 overflow: "hidden",
                             }}
@@ -375,12 +425,12 @@ export default function WorkoutScreen() {
                                 style={{
                                     width: `${pourcentage}%`,
                                     height: "100%",
-                                    backgroundColor: "#2EE6D6",
+                                    backgroundColor: ui.accent,
                                 }}
                             />
                         </View>
 
-                        <Text style={{ color: "#7C8799", marginTop: 10 }}>
+                        <Text style={{ color: ui.textMuted, marginTop: 10 }}>
                             {completes.length} / {exercices.length} exercices complétés
                         </Text>
                     </View>
@@ -390,31 +440,38 @@ export default function WorkoutScreen() {
                     <TouchableOpacity
                         onPress={terminerWorkout}
                         style={{
-                            backgroundColor: "#2EE6D6",
+                            backgroundColor: ui.accent,
                             borderRadius: 16,
                             padding: 16,
                             alignItems: "center",
                             marginTop: 20,
                         }}
                     >
-                        <Text style={{ fontWeight: "800" }}>Terminer l’entraînement</Text>
+                        <Text
+                            style={{
+                                fontWeight: "800",
+                                color: ui.accentText,
+                            }}
+                        >
+                            Terminer l’entraînement
+                        </Text>
                     </TouchableOpacity>
                 )}
 
                 {historique.length > 0 && (
                     <View
                         style={{
-                            backgroundColor: "#0D1524",
+                            backgroundColor: ui.cardBackground,
                             borderRadius: 20,
                             padding: 18,
                             borderWidth: 1,
-                            borderColor: "#162033",
+                            borderColor: ui.border,
                             marginTop: 20,
                         }}
                     >
                         <Text
                             style={{
-                                color: "white",
+                                color: ui.textPrimary,
                                 fontSize: 18,
                                 fontWeight: "700",
                                 marginBottom: 14,
@@ -427,21 +484,27 @@ export default function WorkoutScreen() {
                             <View
                                 key={item.id}
                                 style={{
-                                    backgroundColor: "#121C2D",
+                                    backgroundColor: ui.cardSecondary,
                                     borderRadius: 16,
                                     padding: 14,
                                     marginBottom: 10,
                                 }}
                             >
-                                <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                                <Text
+                                    style={{
+                                        color: ui.textPrimary,
+                                        fontSize: 16,
+                                        fontWeight: "700",
+                                    }}
+                                >
                                     {item.type}
                                 </Text>
 
-                                <Text style={{ color: "#7C8799", marginTop: 4 }}>
+                                <Text style={{ color: ui.textMuted, marginTop: 4 }}>
                                     {item.exercicesCompletes}/{item.exercicesTotal} exercices
                                 </Text>
 
-                                <Text style={{ color: "#7C8799", marginTop: 2 }}>
+                                <Text style={{ color: ui.textMuted, marginTop: 2 }}>
                                     {item.date}
                                 </Text>
                             </View>
@@ -458,7 +521,7 @@ export default function WorkoutScreen() {
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        backgroundColor: "#070B14",
+                        backgroundColor: ui.overlay,
                         alignItems: "center",
                         justifyContent: "center",
                         padding: 30,
@@ -467,7 +530,7 @@ export default function WorkoutScreen() {
                     <Text
                         style={{
                             fontSize: 40,
-                            color: "#35D07F",
+                            color: ui.successText,
                             fontWeight: "900",
                             marginBottom: 12,
                         }}
@@ -475,20 +538,33 @@ export default function WorkoutScreen() {
                         Bel effort 🎉
                     </Text>
 
-                    <Text style={{ color: "white", fontSize: 18, marginBottom: 24 }}>
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            marginBottom: 24,
+                        }}
+                    >
                         Tu as complété {completes.length} exercice(s)
                     </Text>
 
                     <TouchableOpacity
                         onPress={nouveauWorkout}
                         style={{
-                            backgroundColor: "#2EE6D6",
+                            backgroundColor: ui.accent,
                             borderRadius: 16,
                             paddingVertical: 14,
                             paddingHorizontal: 22,
                         }}
                     >
-                        <Text style={{ fontWeight: "800" }}>Faire une autre séance</Text>
+                        <Text
+                            style={{
+                                fontWeight: "800",
+                                color: ui.accentText,
+                            }}
+                        >
+                            Faire une autre séance
+                        </Text>
                     </TouchableOpacity>
                 </View>
             )}
