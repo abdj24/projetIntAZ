@@ -6,9 +6,11 @@
 
 import { Platform } from 'react-native';
 
+// Couleurs principales selon le theme.
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
+// Palette globale utilisee par les onglets et certains composants.
 export const Colors = {
   light: {
     text: '#11181C',
@@ -28,6 +30,7 @@ export const Colors = {
   },
 };
 
+// Polices systeme selon la plateforme.
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

@@ -1,5 +1,6 @@
 //Généré par IA
 
+// Couleurs partagees entre les composants UI.
 export type UiColors = {
     screenBackground: string;
     textPrimary: string;

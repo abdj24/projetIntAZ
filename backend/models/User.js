@@ -2,6 +2,22 @@
 
 const mongoose = require("mongoose");
 
+// Historique des pesees de l'utilisateur.
+const WeightHistorySchema = new mongoose.Schema(
+    {
+        date: {
+            type: String,
+            required: true,
+        },
+        weight: {
+            type: Number,
+            required: true,
+        },
+    },
+    { _id: true }
+);
+
+// Modele principal d'un utilisateur Endorphine.
 const UserSchema = new mongoose.Schema(
     {
         name: {
@@ -33,6 +49,16 @@ const UserSchema = new mongoose.Schema(
             type: Number,
             default: null,
         },
+        weightHistory: {
+            type: [WeightHistorySchema],
+            default: [],
+        },
+        friends: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
         height: {
             type: Number,
             default: null,

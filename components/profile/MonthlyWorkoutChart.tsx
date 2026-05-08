@@ -14,6 +14,7 @@ type Props = {
     getMonthName: (date: Date) => string;
 };
 
+// Graphique des workouts du mois selectionne.
 export default function MonthlyWorkoutChart({
                                                 ui,
                                                 selectedMonth,

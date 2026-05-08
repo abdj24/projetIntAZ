@@ -5,9 +5,11 @@ import { Redirect, useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginScreen() {
+    // Initialisation du contexte d'authentification et du routeur.
     const { login, register, logout, user, token, loading } = useAuth();
     const router = useRouter();
 
+    // Initialisation des champs du formulaire.
     const [mode, setMode] = useState<"login" | "register">("login");
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
@@ -15,6 +17,7 @@ export default function LoginScreen() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
+    // Connexion d'un utilisateur existant.
     async function handleLogin() {
         try {
             setError("");
@@ -25,6 +28,7 @@ export default function LoginScreen() {
         }
     }
 
+    // Creation d'un nouveau compte utilisateur.
     async function handleRegister() {
         try {
             setError("");
@@ -35,6 +39,7 @@ export default function LoginScreen() {
         }
     }
 
+    // Nettoyage de la session locale.
     async function handleResetSession() {
         setError("");
         await logout();
@@ -42,6 +47,7 @@ export default function LoginScreen() {
         setPassword("");
     }
 
+    // Redirection si l'utilisateur est deja connecte.
     if (loading) return null;
 
     if (user && token) {

@@ -9,6 +9,7 @@ type Props = {
     ui: UiColors;
 };
 
+// Carte compacte pour afficher une statistique.
 export function StatCard({ label, value, ui }: Props) {
     return (
         <View

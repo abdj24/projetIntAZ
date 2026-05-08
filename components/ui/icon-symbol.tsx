@@ -9,6 +9,7 @@ import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
 type IconSymbolName = keyof typeof MAPPING;
 
+// Correspondance entre symboles iOS et icones Material.
 /**
  * Add your SF Symbols to Material Icons mappings here.
  * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
@@ -38,5 +39,6 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
+  // Rendu de l'icone adaptee a Android et au web.
   return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
 }

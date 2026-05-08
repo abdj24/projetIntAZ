@@ -19,9 +19,11 @@ type AuthContextType = {
     logout: () => Promise<void>;
 };
 
+// Contexte global de session utilisateur.
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+    // Initialisation des variables d'authentification.
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadSession();
     }, []);
 
+    // Suppression de la session locale.
     async function clearSession() {
         await AsyncStorage.removeItem("token");
         await AsyncStorage.removeItem("user");
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     }
 
+    // Chargement et verification de la session sauvegardee.
     async function loadSession() {
         try {
             const savedToken = await AsyncStorage.getItem("token");
@@ -62,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
 
+    // Connexion avec email et mot de passe.
     async function login(email: string, password: string) {
         const data = await apiLogin(email, password);
 
@@ -76,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
     }
 
+    // Inscription d'un nouvel utilisateur.
     async function register(
         name: string,
         username: string,
@@ -95,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
     }
 
+    // Mise a jour du profil connecte.
     async function updateProfile(updates: Partial<User>) {
         const currentToken = token || (await AsyncStorage.getItem("token"));
 
@@ -108,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(updatedUser);
     }
 
+    // Deconnexion de l'utilisateur.
     async function logout() {
         await clearSession();
     }
@@ -129,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// Hook d'acces au contexte d'authentification.
 export function useAuth() {
     const context = useContext(AuthContext);
 

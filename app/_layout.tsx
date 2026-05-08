@@ -17,6 +17,7 @@ export const unstable_settings = {
     anchor: "(tabs)",
 };
 
+// Navigation principale apres chargement de la session.
 function AppNavigator() {
     const { theme } = useTheme();
     const { loading } = useAuth();
@@ -34,6 +35,7 @@ function AppNavigator() {
     );
 }
 
+// Initialisation des providers globaux de l'application.
 export default function RootLayout() {
     return (
         <ThemeProvider>

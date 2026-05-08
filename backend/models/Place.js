@@ -1,6 +1,7 @@
 //Généré par IA
 const mongoose = require("mongoose");
 
+// Lieu affiche dans la carte de l'application.
 const PlaceSchema = new mongoose.Schema(
     {
         nom: {

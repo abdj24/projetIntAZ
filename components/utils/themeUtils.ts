@@ -2,6 +2,8 @@
 
 import { Colors } from "@/constants/theme";
 import { UiColors } from "../types/ui";
+
+// Construction des couleurs UI selon le theme actif.
 export function getUiColors(theme: "light" | "dark"): UiColors {
     const colors = Colors[theme];
 

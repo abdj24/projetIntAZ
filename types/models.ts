@@ -6,6 +6,7 @@ export type MessageSender = "utilisateur" | "assistant";
 
 // Différentes types de variables
 
+// Donnees du profil utilisateur.
 export type User = {
     id: string;
     _id?: string;
@@ -14,11 +15,13 @@ export type User = {
     email?: string;
     age?: number | null;
     weight?: number | null;
+    weightHistory?: WeightEntry[];
     height?: number | null;
     goal?: GoalType | string;
     level?: LevelType | string;
 };
 
+// Exercice d'un workout.
 export type Exercise = {
     id: string;
     name: string;
@@ -27,6 +30,7 @@ export type Exercise = {
     weight?: number;
 };
 
+// Workout sauvegarde dans MongoDB.
 export type Workout = {
     id: string;
     title: string;
@@ -36,12 +40,14 @@ export type Workout = {
     exercises: Exercise[];
 };
 
+// Entree de l'historique de poids.
 export type WeightEntry = {
     id: string;
     date: string;
     weight: number;
 };
 
+// Message de l'assistant.
 export type ChatMessage = {
     id: string;
     sender: MessageSender;
@@ -49,6 +55,7 @@ export type ChatMessage = {
     date: string;
 };
 
+// Lieu affiche sur la carte.
 export type Place = {
     id: string;
     _id?: string;

@@ -1,6 +1,7 @@
 //Généré par IA
 const Place = require("../models/Place");
 
+// Lieux inseres automatiquement si la collection MongoDB est vide.
 const DEFAULT_PLACES = [
     {
         nom: "Econofitness Berri-UQAM",
@@ -39,6 +40,7 @@ const DEFAULT_PLACES = [
     },
 ];
 
+// Initialisation des lieux par defaut dans MongoDB.
 async function ensureDefaultPlaces() {
     const count = await Place.countDocuments();
 
@@ -49,8 +51,10 @@ async function ensureDefaultPlaces() {
 
 exports.getPlaces = async (req, res) => {
     try {
+        // Verification que la collection contient des lieux.
         await ensureDefaultPlaces();
 
+        // Recuperation des lieux tries par nom.
         const places = await Place.find().sort({ nom: 1 });
         res.json(places);
     } catch (error) {

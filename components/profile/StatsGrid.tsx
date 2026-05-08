@@ -10,6 +10,7 @@ type Props = {
     streak: number;
 };
 
+// Grille des statistiques principales du profil.
 export default function StatsGrid({
                                       ui,
                                       totalWorkouts,

@@ -8,6 +8,7 @@ export type ThemedViewProps = ViewProps & {
   darkColor?: string;
 };
 
+// Vue qui adapte son fond au theme actif.
 export function ThemedView({ style, lightColor, darkColor, ...otherProps }: ThemedViewProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
 

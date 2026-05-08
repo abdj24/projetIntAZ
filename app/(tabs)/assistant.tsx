@@ -42,6 +42,7 @@ type UiColors = {
     userText: string;
 };
 
+// Reponses predefinies pour les questions rapides de l'assistant.
 const REPONSES_QUESTIONS: Record<Question, string> = {
     "Perdre du gras":
         "Objectif perte de gras:\n\n1. Garde un deficit leger: environ -300 a -500 kcal par jour.\n2. Proteines hautes: 1.8 a 2.2 g/kg.\n3. Musculation 3 a 5 fois/semaine pour garder le muscle.\n4. Marche: vise 7 000 a 10 000 pas quand possible.\n5. Suis ton poids sur 2 a 4 semaines, pas juste une journee.\n\nLe but est de perdre lentement mais regulierement.",
@@ -57,6 +58,7 @@ const REPONSES_QUESTIONS: Record<Question, string> = {
         "Cardio simple:\n\n- Pour la sante: 2 a 4 sessions de 20 a 40 min/semaine.\n- Pour perdre du gras: utile, mais l'alimentation reste centrale.\n- Pour prendre du muscle: garde le cardio modere pour ne pas nuire a la recuperation.\n\nBon choix: marche rapide, velo, incline treadmill, course legere.",
 };
 
+// Programmes proposes selon le nombre de jours disponibles.
 const REPONSES_PLANS: Record<Plan, string> = {
     "3 jours":
         "Plan 3 jours, simple et efficace:\n\nJour 1 - Haut du corps\n- Push-ups ou bench press\n- Rowing\n- Shoulder press\n- Curl biceps\n- Triceps\n\nJour 2 - Bas du corps\n- Squat ou leg press\n- Fentes\n- Romanian deadlift\n- Mollets\n- Gainage\n\nJour 3 - Full body + cardio\n- Tirage\n- Presse ou squat leger\n- Developpe epaules\n- Abdos\n- 20 min cardio\n\nProgression: ajoute 1 rep par serie avant d'augmenter la charge.",
@@ -66,12 +68,14 @@ const REPONSES_PLANS: Record<Plan, string> = {
         "Plan 5 jours:\n\nJour 1 - Pecs / triceps\nJour 2 - Dos / biceps\nJour 3 - Jambes\nJour 4 - Epaules / abdos\nJour 5 - Full body leger + cardio\n\nGarde 1 a 2 jours de repos. Si tu es fatigue, transforme le jour 5 en marche + mobilite.",
 };
 
+// Messages de depart pour le module nutrition.
 const INVITES_NUTRITION: Record<ObjectifNutrition, string> = {
     Cut: "Objectif cut choisi. Entre ton poids en kg pour estimer calories et proteines.",
     Maintien: "Objectif maintien choisi. Entre ton poids en kg.",
     Bulk: "Objectif bulk choisi. Entre ton poids en kg.",
 };
 
+// Calcul simple des calories et macros selon l'objectif choisi.
 function calculerNutrition(poids: number, objectif: ObjectifNutrition) {
     const maintien = poids * 33;
     const configs = {
@@ -91,6 +95,7 @@ function calculerNutrition(poids: number, objectif: ObjectifNutrition) {
     return { calories, proteines, lipides, glucides };
 }
 
+// Analyse du texte libre pour choisir la meilleure reponse.
 function analyserTexte(texte: string) {
     const t = texte.toLowerCase();
 
@@ -119,6 +124,7 @@ function analyserTexte(texte: string) {
     return "Je peux t'aider sur la perte de gras, la prise de muscle, la motivation, les courbatures, le cardio, les plateaux ou un programme. Essaie une question comme: \"comment perdre du gras ?\" ou \"donne-moi un plan 4 jours\".";
 }
 
+// Affichage d'un message de conversation.
 function BulleMessage({ message, ui }: { message: Message; ui: UiColors }) {
     const estAssistant = message.auteur === "assistant";
 
@@ -159,6 +165,7 @@ function BulleMessage({ message, ui }: { message: Message; ui: UiColors }) {
     );
 }
 
+// Bouton reutilisable pour les choix de l'assistant.
 function BoutonChoix({
                          label,
                          actif,
@@ -198,6 +205,7 @@ function BoutonChoix({
 }
 
 export default function AssistantEcran() {
+    // Initialisation des references, du theme et des donnees d'entrainement.
     const scrollRef = useRef<ScrollView | null>(null);
     const { theme } = useTheme();
     const { workouts } = useWorkouts();
@@ -220,6 +228,7 @@ export default function AssistantEcran() {
         userText: "#070B14",
     };
 
+    // Initialisation des variables de conversation.
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "intro",
@@ -233,6 +242,7 @@ export default function AssistantEcran() {
     const [texteEntree, setTexteEntree] = useState("");
     const [demandePoids, setDemandePoids] = useState(false);
 
+    // Analyse rapide basee sur les workouts sauvegardes.
     const analyseRapide = useMemo(() => {
         const today = toLocalDateString(new Date());
         const workoutsCompletes = workouts.filter((workout) => workout.completed);
@@ -247,6 +257,7 @@ export default function AssistantEcran() {
         return `Analyse rapide:\n\n- Seances completees: ${workoutsCompletes.length}\n- Aujourd'hui: ${workoutsAujourdhui.length}\n- Jours actifs: ${joursActifs}\n- Temps total: ${totalMinutes} min\n\nConseil: garde une frequence realiste. Si tu as deja fait une seance aujourd'hui, priorise recuperation, marche ou mobilite.`;
     }, [workouts]);
 
+    // Ajout d'un message dans la conversation.
     function ajouterMessage(auteur: "assistant" | "user", texte: string) {
         setMessages((prev) => [
             ...prev,
@@ -258,6 +269,7 @@ export default function AssistantEcran() {
         }, 50);
     }
 
+    // Changement de categorie dans l'assistant.
     function choisirCategorie(categorie: Categorie) {
         if (!categorie) return;
 
@@ -293,6 +305,7 @@ export default function AssistantEcran() {
         ajouterMessage("assistant", INVITES_NUTRITION[objectif]);
     }
 
+    // Envoi du texte saisi par l'utilisateur.
     function envoyerTexte() {
         const texte = texteEntree.trim();
         if (!texte) return;
@@ -322,6 +335,7 @@ export default function AssistantEcran() {
         setTexteEntree("");
     }
 
+    // Remise a zero de la conversation.
     function resetConversation() {
         setCategorieChoisie(null);
         setDemandePoids(false);

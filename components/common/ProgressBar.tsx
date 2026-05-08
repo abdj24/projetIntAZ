@@ -9,7 +9,9 @@ type Props = {
     height?: number;
 };
 
+// Barre de progression reutilisable.
 export function ProgressBar({ value, ui, height = 10 }: Props) {
+    // Limite la valeur entre 0 et 100.
     const safeValue = Math.min(Math.max(value, 0), 100);
 
     return (

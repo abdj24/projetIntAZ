@@ -10,6 +10,7 @@ type Props = {
     marginBottom?: number;
 };
 
+// Carte de section reutilisable dans les ecrans.
 export function SectionCard({ children, ui, marginBottom = 20 }: Props) {
     return (
         <View

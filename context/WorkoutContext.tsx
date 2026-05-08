@@ -13,19 +13,23 @@ type WorkoutContextType = {
     addWorkout: (workout: Omit<Workout, "id">) => Promise<Workout>;
 };
 
+// Contexte global des workouts.
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
 
 export function WorkoutProvider({ children }: { children: ReactNode }) {
+    // Initialisation des variables de workouts.
     const { token } = useAuth();
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Recuperation du token courant.
     const getToken = useCallback(async () => {
         if (token) return token;
         return AsyncStorage.getItem("token");
     }, [token]);
 
+    // Rechargement des workouts depuis MongoDB.
     const refreshWorkouts = useCallback(async () => {
         const currentToken = await getToken();
 
@@ -46,10 +50,12 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         }
     }, [getToken]);
 
+    // Chargement initial des workouts.
     useEffect(() => {
         refreshWorkouts();
     }, [refreshWorkouts]);
 
+    // Ajout d'un workout puis synchronisation avec le backend.
     async function addWorkout(workout: Omit<Workout, "id">) {
         const currentToken = await getToken();
 
@@ -81,6 +87,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// Hook d'acces au contexte workouts.
 export function useWorkouts() {
     const context = useContext(WorkoutContext);
 

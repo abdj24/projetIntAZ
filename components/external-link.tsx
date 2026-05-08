@@ -5,6 +5,7 @@ import { type ComponentProps } from 'react';
 
 type Props = Omit<ComponentProps<typeof Link>, 'href'> & { href: Href & string };
 
+// Lien externe compatible web et mobile.
 export function ExternalLink({ href, ...rest }: Props) {
   return (
     <Link

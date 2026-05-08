@@ -4,6 +4,7 @@ const Workout = require("../models/Workout");
 
 exports.getWorkouts = async (req, res) => {
     try {
+        // Recuperation des workouts de l'utilisateur connecte.
         const workouts = await Workout.find({ userId: req.userId }).sort({
             date: -1,
             createdAt: -1,
@@ -17,12 +18,14 @@ exports.getWorkouts = async (req, res) => {
 
 exports.createWorkout = async (req, res) => {
     try {
+        // Lecture du workout envoye par le frontend.
         const { title, date, duration, completed, exercises } = req.body;
 
         if (!title || !date) {
             return res.status(400).json({ message: "Titre et date requis" });
         }
 
+        // Nettoyage des exercices avant sauvegarde MongoDB.
         const cleanedExercises = Array.isArray(exercises)
             ? exercises.map((exercise) => ({
                 name: exercise.name,
@@ -32,6 +35,7 @@ exports.createWorkout = async (req, res) => {
             }))
             : [];
 
+        // Creation du workout lie a l'utilisateur connecte.
         const workout = await Workout.create({
             userId: req.userId,
             title,
@@ -50,6 +54,7 @@ exports.createWorkout = async (req, res) => {
 
 exports.updateWorkout = async (req, res) => {
     try {
+        // Modification d'un workout appartenant a l'utilisateur.
         const workout = await Workout.findOneAndUpdate(
             { _id: req.params.id, userId: req.userId },
             req.body,
@@ -68,6 +73,7 @@ exports.updateWorkout = async (req, res) => {
 
 exports.deleteWorkout = async (req, res) => {
     try {
+        // Suppression d'un workout appartenant a l'utilisateur.
         const workout = await Workout.findOneAndDelete({
             _id: req.params.id,
             userId: req.userId,

@@ -14,16 +14,19 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 
 const HEADER_HEIGHT = 250;
 
+// Props de l'ecran avec en-tete parallax.
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
   headerBackgroundColor: { dark: string; light: string };
 }>;
 
+// ScrollView avec image d'en-tete animee.
 export default function ParallaxScrollView({
   children,
   headerImage,
   headerBackgroundColor,
 }: Props) {
+  // Initialisation des couleurs et de l'animation de scroll.
   const backgroundColor = useThemeColor({}, 'background');
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -63,6 +66,7 @@ export default function ParallaxScrollView({
   );
 }
 
+// Styles du scroll parallax.
 const styles = StyleSheet.create({
   container: {
     flex: 1,

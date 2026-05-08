@@ -22,6 +22,7 @@ import StatsGrid from "@/components/profile/StatsGrid";
 import MonthlyWorkoutChart from "@/components/profile/MonthlyWorkoutChart";
 import RecentWorkouts from "@/components/profile/RecentWorkouts";
 
+// Formatage du mois affiche dans le graphique du profil.
 function getMonthName(date: Date) {
     return date.toLocaleDateString("fr-CA", {
         month: "long",
@@ -29,6 +30,7 @@ function getMonthName(date: Date) {
     });
 }
 
+// Conversion d'une date en format local YYYY-MM-DD.
 function toLocalDateString(date: Date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -36,11 +38,13 @@ function toLocalDateString(date: Date) {
     return `${year}-${month}-${day}`;
 }
 
+// Nombre de jours dans le mois selectionne.
 function getDaysInMonth(year: number, monthIndex: number) {
     return new Date(year, monthIndex + 1, 0).getDate();
 }
 
 export default function ProfileScreen() {
+    // Initialisation du theme, du profil et des workouts.
     const { theme } = useTheme();
     const { user, updateProfile, logout } = useAuth();
     const { workouts, refreshWorkouts } = useWorkouts();
@@ -63,16 +67,25 @@ export default function ProfileScreen() {
         selectedSubtext: theme === "dark" ? "#0B2F2B" : "#0B5F58",
     };
 
+    // Initialisation des informations affichees dans le profil.
     const [prenomAffiche, setPrenomAffiche] = useState(user?.name ?? "");
     const [usernameAffiche, setUsernameAffiche] = useState(user?.username ?? "");
     const [objectifAffiche, setObjectifAffiche] = useState(
         String(user?.goal ?? "Devenir plus actif")
     );
+    const [poidsAffiche, setPoidsAffiche] = useState<number | null>(
+        user?.weight ?? null
+    );
 
     const [nomDraft, setNomDraft] = useState(prenomAffiche);
     const [usernameDraft, setUsernameDraft] = useState(usernameAffiche);
     const [objectifDraft, setObjectifDraft] = useState(objectifAffiche);
+    const [poidsDraft, setPoidsDraft] = useState(
+        user?.weight != null ? String(user.weight) : ""
+    );
+    const [profilError, setProfilError] = useState("");
 
+    // Initialisation des modales et du mois selectionne.
     const [profilModalVisible, setProfilModalVisible] = useState(false);
     const [settingsModalVisible, setSettingsModalVisible] = useState(false);
 
@@ -83,20 +96,24 @@ export default function ProfileScreen() {
         return new Date(now.getFullYear(), now.getMonth(), 1);
     });
 
+    // Rechargement des workouts quand le profil redevient actif.
     useFocusEffect(
         useCallback(() => {
             void refreshWorkouts();
         }, [refreshWorkouts])
     );
 
+    // Synchronisation du profil local avec l'utilisateur connecte.
     useEffect(() => {
         if (!user) return;
 
         setPrenomAffiche(user.name);
         setUsernameAffiche(user.username ?? "");
         setObjectifAffiche(String(user.goal ?? "Devenir plus actif"));
+        setPoidsAffiche(user.weight ?? null);
     }, [user]);
 
+    // Liste des workouts completes, du plus recent au plus ancien.
     const allWorkouts = useMemo(() => {
         return [...workouts]
             .filter((workout) => workout.completed)
@@ -105,10 +122,12 @@ export default function ProfileScreen() {
 
     const totalWorkouts = allWorkouts.length;
 
+    // Calcul du total d'exercices effectues.
     const totalExercises = allWorkouts.reduce((total, workout) => {
         return total + workout.exercises.length;
     }, 0);
 
+    // Regroupement des workouts par date.
     const workoutsByDate = useMemo(() => {
         const grouped: { [date: string]: Workout[] } = {};
 
@@ -125,6 +144,7 @@ export default function ProfileScreen() {
 
     const activeDays = Object.keys(workoutsByDate).length;
 
+    // Calcul de la serie de jours actifs.
     const streak = useMemo(() => {
         const uniqueDates = [...new Set(allWorkouts.map((w) => w.date))]
             .sort()
@@ -152,6 +172,7 @@ export default function ProfileScreen() {
         return count;
     }, [allWorkouts]);
 
+    // Calcul du rang utilisateur.
     const rank = useMemo(() => {
         if (totalWorkouts >= 20) return "Diamant";
         if (totalWorkouts >= 12) return "Or";
@@ -159,6 +180,7 @@ export default function ProfileScreen() {
         return "Bronze";
     }, [totalWorkouts]);
 
+    // Construction de la liste des badges debloques.
     const badges = useMemo(() => {
         const list: string[] = [];
 
@@ -170,6 +192,7 @@ export default function ProfileScreen() {
         return list;
     }, [streak, totalWorkouts, totalExercises]);
 
+    // Workouts du mois selectionne.
     const workoutsThisMonth = useMemo(() => {
         const year = selectedMonth.getFullYear();
         const monthIndex = selectedMonth.getMonth();
@@ -182,6 +205,7 @@ export default function ProfileScreen() {
 
     const monthlyTotal = workoutsThisMonth.length;
 
+    // Donnees du graphique mensuel.
     const monthlyChartData = useMemo(() => {
         const year = selectedMonth.getFullYear();
         const monthIndex = selectedMonth.getMonth();
@@ -205,15 +229,18 @@ export default function ProfileScreen() {
         });
     }, [selectedMonth, workoutsThisMonth, ui.accent]);
 
+    // Valeur maximale utilisee pour l'echelle du graphique.
     const maxChartValue = useMemo(() => {
         const max = Math.max(...monthlyChartData.map((item) => item.value), 0);
         return max < 4 ? 4 : max;
     }, [monthlyChartData]);
 
+    // Selection des workouts recents affiches sur le profil.
     const recentWorkouts = useMemo(() => {
         return allWorkouts.slice(0, 6);
     }, [allWorkouts]);
 
+    // Garde un workout recent selectionne si la liste change.
     useEffect(() => {
         if (recentWorkouts.length > 0) {
             const stillExists = recentWorkouts.some(
@@ -228,34 +255,48 @@ export default function ProfileScreen() {
         }
     }, [recentWorkouts, selectedWorkoutId]);
 
+    // Navigation vers le mois precedent.
     function previousMonth() {
         setSelectedMonth(
             (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
         );
     }
 
+    // Navigation vers le mois suivant.
     function nextMonth() {
         setSelectedMonth(
             (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
         );
     }
 
+    // Ouverture de la modale de modification du profil.
     function openEditProfile() {
         setNomDraft(prenomAffiche);
         setUsernameDraft(usernameAffiche);
         setObjectifDraft(objectifAffiche);
+        setPoidsDraft(poidsAffiche != null ? String(poidsAffiche) : "");
+        setProfilError("");
         setProfilModalVisible(true);
     }
 
+    // Sauvegarde du profil et du poids dans MongoDB.
     async function saveProfile() {
         const cleanName = nomDraft.trim();
         const cleanUsername = usernameDraft.trim().replace(/^@+/, "");
         const cleanGoal = objectifDraft.trim();
+        const cleanWeight = poidsDraft.trim().replace(",", ".");
+        const parsedWeight = cleanWeight.length > 0 ? Number(cleanWeight) : null;
+
+        if (parsedWeight !== null && (!Number.isFinite(parsedWeight) || parsedWeight <= 0 || parsedWeight > 400)) {
+            setProfilError("Entre un poids valide en kg.");
+            return;
+        }
 
         await updateProfile({
             name: cleanName.length > 0 ? cleanName : prenomAffiche,
             username: cleanUsername.length > 0 ? cleanUsername : usernameAffiche,
             goal: cleanGoal.length > 0 ? cleanGoal : objectifAffiche,
+            weight: parsedWeight,
         });
 
         setProfilModalVisible(false);
@@ -314,6 +355,46 @@ export default function ProfileScreen() {
                     selectedWorkoutId={selectedWorkoutId}
                     setSelectedWorkoutId={setSelectedWorkoutId}
                 />
+
+                <View
+                    style={{
+                        backgroundColor: ui.cardBackground,
+                        borderRadius: 20,
+                        padding: 18,
+                        borderWidth: 1,
+                        borderColor: ui.border,
+                        marginBottom: 20,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: ui.textPrimary,
+                            fontSize: 18,
+                            fontWeight: "700",
+                            marginBottom: 14,
+                        }}
+                    >
+                        Poids actuel
+                    </Text>
+
+                    <View
+                        style={{
+                            backgroundColor: ui.cardSecondary,
+                            borderRadius: 16,
+                            padding: 16,
+                        }}
+                    >
+                        <Text
+                            style={{
+                                color: ui.textPrimary,
+                                fontSize: 22,
+                                fontWeight: "800",
+                            }}
+                        >
+                            {poidsAffiche != null ? `${poidsAffiche} kg` : "Non renseigné"}
+                        </Text>
+                    </View>
+                </View>
 
                 <View
                     style={{
@@ -528,6 +609,32 @@ export default function ProfileScreen() {
                                 borderColor: ui.border,
                             }}
                         />
+
+                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
+                            Poids actuel (kg)
+                        </Text>
+                        <TextInput
+                            value={poidsDraft}
+                            onChangeText={setPoidsDraft}
+                            keyboardType="numeric"
+                            placeholder="Ex: 82.5"
+                            placeholderTextColor={ui.textMuted}
+                            style={{
+                                backgroundColor: ui.cardSecondary,
+                                color: ui.textPrimary,
+                                borderRadius: 14,
+                                padding: 14,
+                                marginBottom: 12,
+                                borderWidth: 1,
+                                borderColor: ui.border,
+                            }}
+                        />
+
+                        {profilError ? (
+                            <Text style={{ color: "#EF4444", marginBottom: 12 }}>
+                                {profilError}
+                            </Text>
+                        ) : null}
 
                         <View style={{ flexDirection: "row", gap: 12 }}>
                             <TouchableOpacity

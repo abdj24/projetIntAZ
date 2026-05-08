@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/context";
 
 export default function TabLayout() {
+    // Initialisation du theme et verification de la session.
     const { theme } = useTheme();
     const { user, token, loading } = useAuth();
 
@@ -19,6 +20,7 @@ export default function TabLayout() {
         return <Redirect href="/login" />;
     }
 
+    // Declaration des onglets principaux de l'application.
     return (
         <Tabs
             screenOptions={{

@@ -9,6 +9,7 @@ type ProfileHeaderProps = {
     rank: string;
 };
 
+// En-tete du profil avec avatar, nom et rang.
 export default function ProfileHeader({
                                           ui,
                                           prenom,

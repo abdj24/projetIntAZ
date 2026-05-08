@@ -2,6 +2,7 @@
 
 const mongoose = require("mongoose");
 
+// Exercice sauvegarde dans un workout.
 const ExerciseSchema = new mongoose.Schema(
     {
         name: { type: String, required: true },
@@ -12,6 +13,7 @@ const ExerciseSchema = new mongoose.Schema(
     { _id: true }
 );
 
+// Workout lie a un utilisateur MongoDB.
 const WorkoutSchema = new mongoose.Schema(
     {
         userId: {

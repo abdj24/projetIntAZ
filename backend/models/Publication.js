@@ -1,22 +1,27 @@
 //Généré par IA
 const mongoose = require("mongoose");
 
+// Reaction emoji ajoutee par un utilisateur.
 const ReactionSchema = new mongoose.Schema(
     {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         ami: { type: String, required: true },
         emoji: { type: String, required: true },
     },
     { _id: true }
 );
 
+// Commentaire ajoute sous une publication.
 const CommentaireSchema = new mongoose.Schema(
     {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         auteur: { type: String, required: true },
         texte: { type: String, required: true },
     },
     { _id: true }
 );
 
+// Publication sociale liee a un workout complete.
 const PublicationSchema = new mongoose.Schema(
     {
         userId: {
@@ -51,6 +56,12 @@ const PublicationSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        likedBy: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
         reactions: [ReactionSchema],
         commentaires: [CommentaireSchema],
     },

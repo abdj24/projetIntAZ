@@ -11,6 +11,7 @@ import { Place } from "@/types/models";
 
 type FiltreType = "Tous" | "Gym" | "Parc";
 
+// Affichage de la carte Google Maps sur web.
 function MapIframe({
                        cardBackground,
                        textPrimary,
@@ -22,6 +23,7 @@ function MapIframe({
     latitude: number;
     longitude: number;
 }) {
+    // Construction de l'URL de la carte a partir des coordonnees.
     const src =
         `https://www.google.com/maps?q=${latitude},${longitude}&z=13&output=embed`;
 
@@ -58,6 +60,7 @@ function MapIframe({
 }
 
 export default function MapScreen() {
+    // Initialisation du theme, de l'utilisateur et des couleurs.
     const { theme } = useTheme();
     const { token } = useAuth();
     const colors = Colors[theme];
@@ -74,11 +77,13 @@ export default function MapScreen() {
         accentText: "#070B14",
     };
 
+    // Initialisation des variables de la carte.
     const [filtre, setFiltre] = useState<FiltreType>("Tous");
     const [lieux, setLieux] = useState<Place[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    // Chargement des lieux depuis MongoDB.
     const loadPlaces = useCallback(async () => {
         if (!token) return;
 
@@ -95,12 +100,14 @@ export default function MapScreen() {
         }
     }, [token]);
 
+    // Recharge les lieux quand l'onglet Map est ouvert.
     useFocusEffect(
         useCallback(() => {
             void loadPlaces();
         }, [loadPlaces])
     );
 
+    // Application du filtre choisi par l'utilisateur.
     const lieuxFiltres = useMemo(() => {
         if (filtre === "Tous") return lieux;
         return lieux.filter((lieu) => lieu.type === filtre);
@@ -108,6 +115,7 @@ export default function MapScreen() {
 
     const mapCenter = lieuxFiltres[0] || lieux[0];
 
+    // Ouverture du lieu dans Google Maps.
     const ouvrirGoogleMaps = async (lieu: Place) => {
         if (lieu.latitude === undefined || lieu.longitude === undefined) return;
 

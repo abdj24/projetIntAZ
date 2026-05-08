@@ -10,6 +10,7 @@ type Props = {
     setSelectedWorkoutId: (id: string) => void;
 };
 
+// Liste des seances recentes du profil.
 export default function RecentWorkouts({
                                            ui,
                                            recentWorkouts,

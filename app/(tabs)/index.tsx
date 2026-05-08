@@ -20,6 +20,7 @@ type Habitudes = {
 
 const OBJECTIF_SEMAINE = 4;
 
+// Calcul de la salutation selon l'heure actuelle.
 function calculerSalutation(): string {
     const heure = new Date().getHours();
     if (heure < 12) return "Bonjour";
@@ -27,6 +28,7 @@ function calculerSalutation(): string {
     return "Bonsoir";
 }
 
+// Message court affiche par l'assistant bien-etre de l'accueil.
 function calculerMessageAssistant(
     totalWorkoutsAujourdhui: number,
     habitudes: Habitudes
@@ -43,6 +45,7 @@ function calculerMessageAssistant(
     return "Bonne journée pour une courte séance 💪";
 }
 
+// Calcul du rang selon le nombre de workouts enregistres.
 function calculerRang(totalWorkouts: number): string {
     if (totalWorkouts >= 20) return "Diamond";
     if (totalWorkouts >= 12) return "Platinum";
@@ -51,6 +54,7 @@ function calculerRang(totalWorkouts: number): string {
     return "Bronze";
 }
 
+// Calcul de la progression vers le prochain rang.
 function calculerProgressionRang(totalWorkouts: number): number {
     if (totalWorkouts >= 20) return 100;
     if (totalWorkouts >= 12) return Math.round(((totalWorkouts - 12) / 8) * 100);
@@ -60,16 +64,19 @@ function calculerProgressionRang(totalWorkouts: number): number {
 }
 
 export default function HomeScreen() {
+    // Initialisation du theme et des donnees de workouts.
     const { theme, toggleTheme } = useTheme();
     const { workouts, refreshWorkouts } = useWorkouts();
     const ui = getUiColors(theme);
 
+    // Initialisation des habitudes du jour.
     const [habitudes, setHabitudes] = useState<Habitudes>({
         meditation: false,
         eau: false,
         marche: false,
     });
 
+    // Rechargement des workouts quand l'accueil redevient actif.
     useFocusEffect(
         useCallback(() => {
             void refreshWorkouts();
@@ -78,16 +85,19 @@ export default function HomeScreen() {
 
     const today = toLocalDateString(new Date());
 
+    // Copie locale des workouts pour calculer les statistiques.
     const tousLesWorkouts = useMemo(
         () => [...workouts],
         [workouts]
     );
 
+    // Filtre des workouts de la journee.
     const workoutsAujourdhui = useMemo(
         () => tousLesWorkouts.filter((w) => w.date === today),
         [tousLesWorkouts, today]
     );
 
+    // Filtre des workouts sur les 7 derniers jours.
     const workouts7Jours = useMemo(() => {
         const dateAujourdhui = new Date(today);
 
@@ -100,6 +110,7 @@ export default function HomeScreen() {
         });
     }, [tousLesWorkouts, today]);
 
+    // Selection des activites recentes affichees en bas de l'accueil.
     const activitesRecentes = useMemo(
         () =>
             [...tousLesWorkouts]
@@ -134,6 +145,7 @@ export default function HomeScreen() {
     const messageAssistant = calculerMessageAssistant(totalWorkoutsAujourdhui, habitudes);
     const habitudesValidees = Object.values(habitudes).filter(Boolean).length;
 
+    // Activation ou desactivation d'une habitude quotidienne.
     function basculerHabitude(cle: keyof Habitudes) {
         setHabitudes((ancien) => ({ ...ancien, [cle]: !ancien[cle] }));
     }
