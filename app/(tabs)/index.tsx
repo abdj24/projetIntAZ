@@ -1,18 +1,16 @@
-//Cette classe est générée par IA
+//Généré par IA
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { mockWorkouts } from "@/data/mockData";
-import { getSessionWorkouts, subscribeSessionWorkouts } from "@/data/workoutSession";
-import { getEffectiveToday, subscribeTodayOverride } from "@/data/testToday";
-import { Workout } from "@/types/models";
+import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "@/context/context";
+import { useWorkouts } from "@/context/WorkoutContext";
 
 import { SectionCard } from "@/components/common/SectionCard";
 import { StatCard } from "@/components/common/StatCard";
 import { ProgressBar } from "@/components/common/ProgressBar";
 import { getUiColors } from "@/components/utils/themeUtils";
-import { formaterDate } from "@/components/utils/dateUtils";
+import { formaterDate, toLocalDateString } from "@/components/utils/dateUtils";
 
 type Habitudes = {
     meditation: boolean;
@@ -63,34 +61,26 @@ function calculerProgressionRang(totalWorkouts: number): number {
 
 export default function HomeScreen() {
     const { theme, toggleTheme } = useTheme();
+    const { workouts, refreshWorkouts } = useWorkouts();
     const ui = getUiColors(theme);
 
-    const [today, setToday] = useState<string>(getEffectiveToday());
-    const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(getSessionWorkouts());
     const [habitudes, setHabitudes] = useState<Habitudes>({
         meditation: false,
         eau: false,
         marche: false,
     });
 
-    useEffect(() => {
-        const unsubscribeWorkouts = subscribeSessionWorkouts(() => {
-            setSessionWorkouts([...getSessionWorkouts()]);
-        });
+    useFocusEffect(
+        useCallback(() => {
+            void refreshWorkouts();
+        }, [refreshWorkouts])
+    );
 
-        const unsubscribeToday = subscribeTodayOverride(() => {
-            setToday(getEffectiveToday());
-        });
-
-        return () => {
-            unsubscribeWorkouts();
-            unsubscribeToday();
-        };
-    }, []);
+    const today = toLocalDateString(new Date());
 
     const tousLesWorkouts = useMemo(
-        () => [...sessionWorkouts, ...mockWorkouts],
-        [sessionWorkouts]
+        () => [...workouts],
+        [workouts]
     );
 
     const workoutsAujourdhui = useMemo(

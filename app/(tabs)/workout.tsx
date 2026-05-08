@@ -1,33 +1,21 @@
-//Cette classe est générée par IA
+//Généré par IA
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import {
-    addSessionWorkout,
-    getSessionWorkouts,
-    subscribeSessionWorkouts,
-} from "@/data/workoutSession";
-import { getEffectiveToday, subscribeTodayOverride } from "@/data/testToday";
 import { useTheme } from "@/context/context";
+import { useWorkouts } from "@/context/WorkoutContext";
 
 import { SectionCard } from "@/components/common/SectionCard";
 import { StatCard } from "@/components/common/StatCard";
 import { ProgressBar } from "@/components/common/ProgressBar";
 import { getUiColors } from "@/components/utils/themeUtils";
+import { toLocalDateString } from "@/components/utils/dateUtils";
 
 type TypeWorkout = "Haut du corps" | "Bas du corps" | "Cardio";
 
 type Exercice = {
     id: string;
     label: string;
-};
-
-type HistoriqueWorkout = {
-    id: string;
-    type: TypeWorkout;
-    date: string;
-    exercicesCompletes: number;
-    exercicesTotal: number;
 };
 
 const plansWorkout: Record<TypeWorkout, Exercice[]> = {
@@ -53,53 +41,39 @@ const plansWorkout: Record<TypeWorkout, Exercice[]> = {
 
 export default function WorkoutScreen() {
     const { theme } = useTheme();
+    const { workouts, addWorkout } = useWorkouts();
     const ui = getUiColors(theme);
 
     const [workoutChoisi, setWorkoutChoisi] = useState<TypeWorkout | null>(null);
     const [demarre, setDemarre] = useState(false);
     const [termine, setTermine] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
     const [completes, setCompletes] = useState<string[]>([]);
-    const [historique, setHistorique] = useState<HistoriqueWorkout[]>([]);
-    const [aujourdhui, setAujourdhui] = useState<string>(getEffectiveToday());
-    const [sessionWorkouts, setSessionWorkouts] = useState(getSessionWorkouts());
-
-    useEffect(() => {
-        const unsubscribeToday = subscribeTodayOverride(() => {
-            setAujourdhui(getEffectiveToday());
-        });
-
-        return () => unsubscribeToday();
-    }, []);
-
-    useEffect(() => {
-        const unsubscribeWorkouts = subscribeSessionWorkouts(() => {
-            setSessionWorkouts([...getSessionWorkouts()]);
-        });
-
-        return () => unsubscribeWorkouts();
-    }, []);
+    const aujourdhui = toLocalDateString(new Date());
 
     const exercices = workoutChoisi ? plansWorkout[workoutChoisi] : [];
     const pourcentage =
         exercices.length > 0 ? Math.round((completes.length / exercices.length) * 100) : 0;
 
-    const workoutsAujourdhui = sessionWorkouts.filter(
+    const workoutsAujourdhui = workouts.filter(
         (item) => item.date === aujourdhui
     ).length;
 
-    const totalWorkouts = sessionWorkouts.length;
+    const totalWorkouts = workouts.length;
 
-    const totalExercicesCompletes = sessionWorkouts.reduce(
+    const totalExercicesCompletes = workouts.reduce(
         (total, item) => total + item.exercises.length,
         0
     );
 
-    const dernierWorkout = sessionWorkouts.length > 0 ? sessionWorkouts[0] : null;
+    const dernierWorkout = workouts.length > 0 ? workouts[0] : null;
 
     function choisirWorkout(type: TypeWorkout) {
         setWorkoutChoisi(type);
         setDemarre(false);
         setTermine(false);
+        setError("");
         setCompletes([]);
     }
 
@@ -121,20 +95,10 @@ export default function WorkoutScreen() {
         );
     }
 
-    function terminerWorkout() {
-        if (!demarre || termine || !workoutChoisi) return;
+    async function terminerWorkout() {
+        if (!demarre || termine || !workoutChoisi || saving) return;
 
-        const dateLocale = getEffectiveToday();
-
-        const nouveauWorkoutHistorique: HistoriqueWorkout = {
-            id: Date.now().toString(),
-            type: workoutChoisi,
-            date: dateLocale,
-            exercicesCompletes: completes.length,
-            exercicesTotal: exercices.length,
-        };
-
-        setHistorique((ancienneListe) => [nouveauWorkoutHistorique, ...ancienneListe]);
+        const dateLocale = toLocalDateString(new Date());
 
         const exercicesCompletesPourStats = exercices
             .filter((exercice) => completes.includes(exercice.id))
@@ -146,22 +110,30 @@ export default function WorkoutScreen() {
                 weight: undefined,
             }));
 
-        addSessionWorkout({
-            id: `session-${Date.now()}`,
-            title: workoutChoisi,
-            date: dateLocale,
-            duration: completes.length * 5,
-            completed: true,
-            exercises: exercicesCompletesPourStats,
-        });
+        try {
+            setSaving(true);
+            setError("");
+            await addWorkout({
+                title: workoutChoisi,
+                date: dateLocale,
+                duration: completes.length * 5,
+                completed: true,
+                exercises: exercicesCompletesPourStats,
+            });
 
-        setTermine(true);
+            setTermine(true);
+        } catch (e: any) {
+            setError(e.message || "Erreur sauvegarde workout");
+        } finally {
+            setSaving(false);
+        }
     }
 
     function nouveauWorkout() {
         setWorkoutChoisi(null);
         setDemarre(false);
         setTermine(false);
+        setError("");
         setCompletes([]);
     }
 
@@ -310,23 +282,42 @@ export default function WorkoutScreen() {
                 )}
 
                 {demarre && !termine && (
-                    <TouchableOpacity
-                        onPress={terminerWorkout}
-                        style={{
-                            backgroundColor: ui.accent,
-                            borderRadius: 16,
-                            padding: 16,
-                            alignItems: "center",
-                            marginTop: 20,
-                        }}
-                    >
-                        <Text style={{ fontWeight: "800", color: ui.accentText }}>
-                            Terminer l’entraînement
-                        </Text>
-                    </TouchableOpacity>
+                    <>
+                        {error ? (
+                            <View
+                                style={{
+                                    backgroundColor: "#3B0D0D",
+                                    borderColor: "#EF4444",
+                                    borderWidth: 1,
+                                    borderRadius: 14,
+                                    padding: 12,
+                                    marginTop: 12,
+                                }}
+                            >
+                                <Text style={{ color: "#FCA5A5", textAlign: "center" }}>
+                                    {error}
+                                </Text>
+                            </View>
+                        ) : null}
+
+                        <TouchableOpacity
+                            onPress={terminerWorkout}
+                            style={{
+                                backgroundColor: ui.accent,
+                                borderRadius: 16,
+                                padding: 16,
+                                alignItems: "center",
+                                marginTop: 20,
+                            }}
+                        >
+                            <Text style={{ fontWeight: "800", color: ui.accentText }}>
+                                {saving ? "Sauvegarde..." : "Terminer l’entraînement"}
+                            </Text>
+                        </TouchableOpacity>
+                    </>
                 )}
 
-                {historique.length > 0 && (
+                {workouts.length > 0 && (
                     <SectionCard ui={ui} marginBottom={0}>
                         <Text
                             style={{
@@ -339,7 +330,7 @@ export default function WorkoutScreen() {
                             Historique 🕓
                         </Text>
 
-                        {historique.map((item) => (
+                        {workouts.slice(0, 5).map((item) => (
                             <View
                                 key={item.id}
                                 style={{
@@ -356,11 +347,11 @@ export default function WorkoutScreen() {
                                         fontWeight: "700",
                                     }}
                                 >
-                                    {item.type}
+                                    {item.title}
                                 </Text>
 
                                 <Text style={{ color: ui.textMuted, marginTop: 4 }}>
-                                    {item.exercicesCompletes}/{item.exercicesTotal} exercices
+                                    {item.exercises.length} exercice(s) • {item.duration} min
                                 </Text>
 
                                 <Text style={{ color: ui.textMuted, marginTop: 2 }}>

@@ -1,4 +1,4 @@
-//Cette classe est générée par IA
+//Généré par IA
 
 import { Text, TouchableOpacity, View } from "react-native";
 import { Workout } from "@/types/models";

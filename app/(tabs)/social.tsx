@@ -1,13 +1,15 @@
-//Cette classe est générée par IA
+//Généré par IA
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Colors } from "@/constants/theme";
 import { useTheme } from "@/context/context";
-import { mockWorkouts } from "@/data/mockData";
-import { getEffectiveToday, subscribeTodayOverride } from "@/data/testToday";
-import { getSessionWorkouts, subscribeSessionWorkouts } from "@/data/workoutSession";
-import { Workout } from "@/types/models";
+import { useAuth } from "@/context/AuthContext";
+import { useWorkouts } from "@/context/WorkoutContext";
+import { toLocalDateString } from "@/components/utils/dateUtils";
+import { createPublication, getPublications } from "@/services/api";
 
 type RangType = "Bronze" | "Argent" | "Or" | "Diamant";
 
@@ -40,49 +42,6 @@ type Publication = {
     commentaires: Commentaire[];
     estMoi?: boolean;
 };
-
-const joueursBase: JoueurClassement[] = [
-    { id: "c1", nom: "Toi", points: 0 },
-    { id: "c2", nom: "Amine", points: 17 },
-    { id: "c3", nom: "Sarah", points: 10 },
-    { id: "c4", nom: "Yanis", points: 6 },
-];
-
-const publicationsAmisInitiales: Publication[] = [
-    {
-        id: "a1",
-        auteur: "Amine",
-        temps: "19:05",
-        titre: "Leg day validé",
-        description: "Squats, fentes et leg press. Jambes détruites 😅",
-        likes: 8,
-        reactions: [
-            { id: "ra1", ami: "Toi", emoji: "🔥" },
-            { id: "ra2", ami: "Sarah", emoji: "💯" },
-        ],
-        commentaires: [{ id: "ca1", auteur: "Toi", texte: "Très lourd 👏" }],
-    },
-    {
-        id: "a2",
-        auteur: "Sarah",
-        temps: "17:40",
-        titre: "Cardio du soir",
-        description: "25 min de course + 10 min de marche rapide.",
-        likes: 6,
-        reactions: [{ id: "ra3", ami: "Toi", emoji: "👏" }],
-        commentaires: [{ id: "ca2", auteur: "Yanis", texte: "Propre ça" }],
-    },
-    {
-        id: "a3",
-        auteur: "Yanis",
-        temps: "15:20",
-        titre: "Séance abdos",
-        description: "Crunchs, planche et mountain climbers.",
-        likes: 4,
-        reactions: [{ id: "ra4", ami: "Toi", emoji: "💪" }],
-        commentaires: [],
-    },
-];
 
 function couleurRang(rang: RangType) {
     if (rang === "Bronze") return "#B87333";
@@ -177,6 +136,8 @@ function EmptyText({ ui, text }: { ui: any; text: string }) {
 
 export default function SocialScreen() {
     const { theme } = useTheme();
+    const { user, token } = useAuth();
+    const { workouts, refreshWorkouts } = useWorkouts();
     const colors = Colors[theme];
 
     const ui = {
@@ -192,48 +153,61 @@ export default function SocialScreen() {
         selfSubtext: theme === "dark" ? "#0B2F2B" : "#0B5F58",
     };
 
-    const [today, setToday] = useState(getEffectiveToday());
-    const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(getSessionWorkouts());
+    const today = toLocalDateString(new Date());
+    const displayName = user?.username || user?.name || "Toi";
+    const publicationsAmis = useMemo<Publication[]>(() => [], []);
 
-    const [publicationsAmis, setPublicationsAmis] = useState(publicationsAmisInitiales);
     const [publicationsPerso, setPublicationsPerso] = useState<Publication[]>([]);
-    const [compteurPublication, setCompteurPublication] = useState(1);
+    const [publicationStatus, setPublicationStatus] = useState("");
+    const [publicationLoading, setPublicationLoading] = useState(false);
 
     const [likesMis, setLikesMis] = useState<Record<string, boolean>>({});
     const [commentairesVisibles, setCommentairesVisibles] = useState<Record<string, boolean>>({});
     const [reactionsPerso, setReactionsPerso] = useState<Record<string, string | null>>({});
     const [commentairesAjoutes, setCommentairesAjoutes] = useState<Record<string, Commentaire[]>>({});
 
+    const getCurrentToken = useCallback(async () => {
+        if (token) return token;
+        return AsyncStorage.getItem("token");
+    }, [token]);
+
+    useFocusEffect(
+        useCallback(() => {
+            void refreshWorkouts();
+        }, [refreshWorkouts])
+    );
+
     useEffect(() => {
-        const unsubscribeWorkouts = subscribeSessionWorkouts(() => {
-            setSessionWorkouts([...getSessionWorkouts()]);
-        });
+        async function loadPublications() {
+            const currentToken = await getCurrentToken();
+            if (!currentToken) return;
 
-        const unsubscribeToday = subscribeTodayOverride(() => {
-            setToday(getEffectiveToday());
-        });
+            try {
+                const data = await getPublications(currentToken);
+                setPublicationsPerso(data);
+            } catch (e: any) {
+                setPublicationStatus(e.message || "Erreur chargement publications");
+            }
+        }
 
-        return () => {
-            unsubscribeWorkouts();
-            unsubscribeToday();
-        };
-    }, []);
+        loadPublications();
+    }, [getCurrentToken]);
 
     const workoutsPerso = useMemo(() => {
-        return [...sessionWorkouts, ...mockWorkouts]
+        return [...workouts]
             .filter((workout) => workout.completed)
             .sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
-    }, [sessionWorkouts]);
+    }, [workouts]);
 
     const classement = useMemo(() => {
-        return joueursBase
-            .map((joueur) =>
-                joueur.nom === "Toi"
-                    ? { ...joueur, points: workoutsPerso.length }
-                    : joueur
-            )
-            .sort((a, b) => b.points - a.points);
-    }, [workoutsPerso]);
+        return [
+            {
+                id: user?.id || "me",
+                nom: displayName,
+                points: workoutsPerso.length,
+            },
+        ] as JoueurClassement[];
+    }, [displayName, user?.id, workoutsPerso.length]);
 
     const maPublicationDuJour = useMemo(() => {
         const workoutDuJour = workoutsPerso.find((workout) => workout.date === today);
@@ -242,23 +216,16 @@ export default function SocialScreen() {
 
         return {
             id: `jour-${workoutDuJour.id}`,
-            auteur: "Toi",
+            auteur: displayName,
             temps: "Aujourd’hui",
             titre: workoutDuJour.title,
             description: `${workoutDuJour.exercises.length} exercice(s) complété(s) • ${workoutDuJour.duration} min`,
-            likes: 12,
-            reactions: [
-                { id: "r1", ami: "Amine", emoji: "🔥" },
-                { id: "r2", ami: "Sarah", emoji: "💪" },
-                { id: "r3", ami: "Yanis", emoji: "👏" },
-            ],
-            commentaires: [
-                { id: "cm1", auteur: "Amine", texte: "Grosse séance 🔥" },
-                { id: "cm2", auteur: "Sarah", texte: "Bien joué 💪" },
-            ],
+            likes: 0,
+            reactions: [],
+            commentaires: [],
             estMoi: true,
         } as Publication;
-    }, [workoutsPerso, today]);
+    }, [displayName, workoutsPerso, today]);
 
     const feedComplet = useMemo(() => {
         return [...publicationsPerso, ...publicationsAmis];
@@ -270,11 +237,7 @@ export default function SocialScreen() {
         dejaLike: boolean
     ) {
         if (source === "ami") {
-            setPublicationsAmis((items) =>
-                items.map((p) =>
-                    p.id === id ? { ...p, likes: dejaLike ? p.likes - 1 : p.likes + 1 } : p
-                )
-            );
+            return;
         }
 
         if (source === "perso") {
@@ -314,7 +277,7 @@ export default function SocialScreen() {
     function ajouterCommentaireRapide(id: string) {
         const nouveauCommentaire = {
             id: `new-${Date.now()}`,
-            auteur: "Toi",
+            auteur: displayName,
             texte: "Bravo 👏",
         };
 
@@ -329,24 +292,42 @@ export default function SocialScreen() {
         }));
     }
 
-    function publierDerniereSeance() {
+    async function publierDerniereSeance() {
         const dernierWorkout = workoutsPerso[0];
-        if (!dernierWorkout) return;
 
-        const nouvellePublication: Publication = {
-            id: `m${compteurPublication}`,
-            auteur: "Toi",
-            temps: "À l’instant",
-            titre: dernierWorkout.title,
-            description: `${dernierWorkout.exercises.length} exercice(s) complété(s) • ${dernierWorkout.duration} min`,
-            likes: 0,
-            reactions: [],
-            commentaires: [],
-            estMoi: true,
-        };
+        const currentToken = await getCurrentToken();
 
-        setPublicationsPerso((anciennes) => [nouvellePublication, ...anciennes]);
-        setCompteurPublication((ancien) => ancien + 1);
+        if (!currentToken) {
+            setPublicationStatus("Session expirée");
+            return;
+        }
+
+        if (!dernierWorkout) {
+            setPublicationStatus("Termine une séance avant de publier.");
+            return;
+        }
+
+        try {
+            setPublicationLoading(true);
+            setPublicationStatus("");
+            const nouvellePublication = await createPublication(currentToken, {
+                workoutId: dernierWorkout.id,
+                auteur: displayName,
+                temps: "À l'instant",
+                titre: dernierWorkout.title,
+                description: `${dernierWorkout.exercises.length} exercice(s) complété(s) • ${dernierWorkout.duration} min`,
+            });
+
+            setPublicationsPerso((anciennes) => {
+                const sansDoublon = anciennes.filter((item) => item.id !== nouvellePublication.id);
+                return [nouvellePublication, ...sansDoublon];
+            });
+            setPublicationStatus("Publication envoyée.");
+        } catch (e: any) {
+            setPublicationStatus(e.message || "Erreur publication");
+        } finally {
+            setPublicationLoading(false);
+        }
     }
 
     function afficherCommentaires(publication: Publication) {
@@ -525,7 +506,7 @@ export default function SocialScreen() {
                 <SectionCard ui={ui} title="Classement">
                     {classement.map((joueur, index) => {
                         const rang = calculerRang(joueur.points);
-                        const estMoi = joueur.nom === "Toi";
+                        const estMoi = joueur.nom === displayName;
 
                         return (
                             <View
@@ -584,13 +565,17 @@ export default function SocialScreen() {
                 </SectionCard>
 
                 <SectionCard ui={ui} title="Ce que mes amis ont fait aujourd’hui">
-                    {publicationsAmis.map((publication) => (
-                        <CardPublication
-                            key={publication.id}
-                            publication={publication}
-                            source="ami"
-                        />
-                    ))}
+                    {publicationsAmis.length === 0 ? (
+                        <EmptyText ui={ui} text="Aucune publication d'ami dans MongoDB." />
+                    ) : (
+                        publicationsAmis.map((publication) => (
+                            <CardPublication
+                                key={publication.id}
+                                publication={publication}
+                                source="ami"
+                            />
+                        ))
+                    )}
                 </SectionCard>
 
                 <SectionCard ui={ui} title="Mes publications">
@@ -611,9 +596,15 @@ export default function SocialScreen() {
                                 fontSize: 15,
                             }}
                         >
-                            Publier ma dernière séance
+                            {publicationLoading ? "Publication..." : "Publier ma dernière séance"}
                         </Text>
                     </TouchableOpacity>
+
+                    {publicationStatus ? (
+                        <Text style={{ color: ui.textMuted, marginBottom: 12 }}>
+                            {publicationStatus}
+                        </Text>
+                    ) : null}
 
                     {publicationsPerso.length === 0 ? (
                         <EmptyText ui={ui} text="Tu n’as pas encore publié de séance." />

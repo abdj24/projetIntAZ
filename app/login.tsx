@@ -1,10 +1,16 @@
+//Généré par IA
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { Redirect, useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginScreen() {
-    const { login } = useAuth();
+    const { login, register, logout, user, token, loading } = useAuth();
+    const router = useRouter();
 
+    const [mode, setMode] = useState<"login" | "register">("login");
+    const [name, setName] = useState("");
+    const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -13,17 +19,63 @@ export default function LoginScreen() {
         try {
             setError("");
             await login(email, password);
+            router.replace("/(tabs)");
         } catch (e: any) {
             setError(e.message || "Erreur de connexion");
         }
+    }
+
+    async function handleRegister() {
+        try {
+            setError("");
+            await register(name, username, email, password);
+            router.replace("/(tabs)");
+        } catch (e: any) {
+            setError(e.message || "Erreur d'inscription");
+        }
+    }
+
+    async function handleResetSession() {
+        setError("");
+        await logout();
+        setEmail("");
+        setPassword("");
+    }
+
+    if (loading) return null;
+
+    if (user && token) {
+        return <Redirect href="/(tabs)" />;
     }
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Connexion</Text>
 
+            {mode === "register" ? (
+                <>
+                    <TextInput
+                        placeholder="Nom"
+                        placeholderTextColor="#888"
+                        value={name}
+                        onChangeText={setName}
+                        style={styles.input}
+                    />
+
+                    <TextInput
+                        placeholder="Username"
+                        placeholderTextColor="#888"
+                        value={username}
+                        onChangeText={setUsername}
+                        style={styles.input}
+                        autoCapitalize="none"
+                    />
+                </>
+            ) : null}
+
             <TextInput
                 placeholder="Email"
+                placeholderTextColor="#888"
                 value={email}
                 onChangeText={setEmail}
                 style={styles.input}
@@ -32,6 +84,7 @@ export default function LoginScreen() {
 
             <TextInput
                 placeholder="Mot de passe"
+                placeholderTextColor="#888"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -40,8 +93,31 @@ export default function LoginScreen() {
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Se connecter</Text>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={mode === "login" ? handleLogin : handleRegister}
+            >
+                <Text style={styles.buttonText}>
+                    {mode === "login" ? "Se connecter" : "Créer le compte"}
+                </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.switchButton}
+                onPress={() => {
+                    setError("");
+                    setMode((current) => (current === "login" ? "register" : "login"));
+                }}
+            >
+                <Text style={styles.switchButtonText}>
+                    {mode === "login"
+                        ? "Créer un nouveau compte"
+                        : "J'ai déjà un compte"}
+                </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleResetSession}>
+                <Text style={styles.secondaryButtonText}>Effacer la session</Text>
             </TouchableOpacity>
         </View>
     );
@@ -68,6 +144,15 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         color: "white",
     },
+    switchButton: {
+        padding: 14,
+        marginTop: 8,
+    },
+    switchButtonText: {
+        color: "#2EE6D6",
+        textAlign: "center",
+        fontWeight: "700",
+    },
     button: {
         backgroundColor: "#2EE6D6",
         padding: 16,
@@ -75,6 +160,18 @@ const styles = StyleSheet.create({
         marginTop: 12,
     },
     buttonText: {
+        textAlign: "center",
+        fontWeight: "700",
+    },
+    secondaryButton: {
+        padding: 14,
+        borderRadius: 12,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: "#444",
+    },
+    secondaryButtonText: {
+        color: "#ddd",
         textAlign: "center",
         fontWeight: "700",
     },

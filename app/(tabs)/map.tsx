@@ -1,66 +1,29 @@
-//Cette classe est générée par IA
+//Généré par IA
 
-import React, { useMemo, useState } from "react";
-import {Linking, Platform, ScrollView, Text, TouchableOpacity, View, useColorScheme,} from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Colors } from "@/constants/theme";
 import { useTheme } from "@/context/context";
+import { useAuth } from "@/context/AuthContext";
+import { getPlaces } from "@/services/api";
+import { Place } from "@/types/models";
 
-type TypeLieu = "Gym" | "Parc";
 type FiltreType = "Tous" | "Gym" | "Parc";
-
-type Lieu = {
-    id: string;
-    nom: string;
-    type: TypeLieu;
-    description: string;
-    latitude: number;
-    longitude: number;
-};
-
-const lieux: Lieu[] = [
-    {
-        id: "1",
-        nom: "Gym Downtown",
-        type: "Gym",
-        description: "Salle complète proche du centre-ville",
-        latitude: 45.5017,
-        longitude: -73.5673,
-    },
-    {
-        id: "2",
-        nom: "Parc Montcalm",
-        type: "Parc",
-        description: "Bon endroit pour courir",
-        latitude: 45.508,
-        longitude: -73.56,
-    },
-    {
-        id: "3",
-        nom: "Fit Club",
-        type: "Gym",
-        description: "Musculation et cardio",
-        latitude: 45.51,
-        longitude: -73.58,
-    },
-    {
-        id: "4",
-        nom: "Parc du Lac",
-        type: "Parc",
-        description: "Petit parc calme",
-        latitude: 45.49,
-        longitude: -73.55,
-    },
-];
 
 function MapIframe({
                        cardBackground,
                        textPrimary,
+                       latitude,
+                       longitude,
                    }: {
     cardBackground: string;
     textPrimary: string;
+    latitude: number;
+    longitude: number;
 }) {
     const src =
-        "https://www.google.com/maps?q=45.5017,-73.5673&z=13&output=embed";
+        `https://www.google.com/maps?q=${latitude},${longitude}&z=13&output=embed`;
 
     if (Platform.OS !== "web") {
         return (
@@ -96,6 +59,7 @@ function MapIframe({
 
 export default function MapScreen() {
     const { theme } = useTheme();
+    const { token } = useAuth();
     const colors = Colors[theme];
 
     const ui = {
@@ -111,13 +75,42 @@ export default function MapScreen() {
     };
 
     const [filtre, setFiltre] = useState<FiltreType>("Tous");
+    const [lieux, setLieux] = useState<Place[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const loadPlaces = useCallback(async () => {
+        if (!token) return;
+
+        const currentToken: string = token;
+
+        try {
+            setLoading(true);
+            setError("");
+            setLieux(await getPlaces(currentToken));
+        } catch (e: any) {
+            setError(e.message || "Erreur chargement lieux");
+        } finally {
+            setLoading(false);
+        }
+    }, [token]);
+
+    useFocusEffect(
+        useCallback(() => {
+            void loadPlaces();
+        }, [loadPlaces])
+    );
 
     const lieuxFiltres = useMemo(() => {
         if (filtre === "Tous") return lieux;
         return lieux.filter((lieu) => lieu.type === filtre);
-    }, [filtre]);
+    }, [filtre, lieux]);
 
-    const ouvrirGoogleMaps = async (lieu: Lieu) => {
+    const mapCenter = lieuxFiltres[0] || lieux[0];
+
+    const ouvrirGoogleMaps = async (lieu: Place) => {
+        if (lieu.latitude === undefined || lieu.longitude === undefined) return;
+
         const url = `https://www.google.com/maps/search/?api=1&query=${lieu.latitude},${lieu.longitude}`;
         await Linking.openURL(url);
     };
@@ -198,11 +191,62 @@ export default function MapScreen() {
                         borderColor: ui.border,
                     }}
                 >
-                    <MapIframe
-                        cardBackground={ui.cardBackground}
-                        textPrimary={ui.textPrimary}
-                    />
+                    {mapCenter?.latitude !== undefined && mapCenter?.longitude !== undefined ? (
+                        <MapIframe
+                            cardBackground={ui.cardBackground}
+                            textPrimary={ui.textPrimary}
+                            latitude={mapCenter.latitude}
+                            longitude={mapCenter.longitude}
+                        />
+                    ) : (
+                        <View
+                            style={{
+                                flex: 1,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                padding: 20,
+                            }}
+                        >
+                            <Text style={{ color: ui.textMuted, textAlign: "center" }}>
+                                Aucun lieu dans MongoDB.
+                            </Text>
+                        </View>
+                    )}
                 </View>
+
+                {loading ? (
+                    <Text style={{ color: ui.textMuted, marginBottom: 12 }}>
+                        Chargement des lieux...
+                    </Text>
+                ) : null}
+
+                {error ? (
+                    <View style={{ marginBottom: 12 }}>
+                        <Text style={{ color: "#EF4444", marginBottom: 10 }}>
+                            {error}
+                        </Text>
+
+                        <TouchableOpacity
+                            onPress={loadPlaces}
+                            style={{
+                                backgroundColor: ui.cardSecondary,
+                                borderRadius: 14,
+                                padding: 14,
+                                alignItems: "center",
+                            }}
+                        >
+                            <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
+                                Reessayer
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : null}
+
+                {!loading && lieuxFiltres.length === 0 ? (
+                    <Text style={{ color: ui.textMuted, fontSize: 15 }}>
+                        Aucun lieu à afficher pour ce filtre.
+                    </Text>
+                ) : null}
 
                 {lieuxFiltres.map((lieu) => (
                     <View

@@ -1,4 +1,4 @@
-//Cette classe est générée par IA
+//Généré par IA
 
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";

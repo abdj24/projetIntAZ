@@ -4,9 +4,24 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
+function toPublicUser(user) {
+    return {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        age: user.age,
+        weight: user.weight,
+        height: user.height,
+        goal: user.goal,
+        level: user.level,
+    };
+}
+
 exports.register = async (req, res) => {
     try {
-        const { name, username, email, password } = req.body;
+        const { name, username, email, password, age, weight, height, goal, level } = req.body;
 
         if (!name || !username || !email || !password) {
             return res.status(400).json({ message: "Tous les champs sont requis" });
@@ -25,6 +40,11 @@ exports.register = async (req, res) => {
             username,
             email,
             password: hashedPassword,
+            age,
+            weight,
+            height,
+            goal,
+            level,
         });
 
         const token = jwt.sign(
@@ -35,13 +55,7 @@ exports.register = async (req, res) => {
 
         res.status(201).json({
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                username: user.username,
-                email: user.email,
-                goal: user.goal,
-            },
+            user: toPublicUser(user),
         });
     } catch (error) {
         res.status(500).json({ message: "Erreur serveur register" });
@@ -72,13 +86,7 @@ exports.login = async (req, res) => {
 
         res.json({
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                username: user.username,
-                email: user.email,
-                goal: user.goal,
-            },
+            user: toPublicUser(user),
         });
     } catch (error) {
         res.status(500).json({ message: "Erreur serveur login" });
@@ -93,8 +101,34 @@ exports.me = async (req, res) => {
             return res.status(404).json({ message: "Utilisateur introuvable" });
         }
 
-        res.json(user);
+        res.json(toPublicUser(user));
     } catch {
         res.status(500).json({ message: "Erreur serveur me" });
+    }
+};
+
+exports.updateMe = async (req, res) => {
+    try {
+        const allowedFields = ["name", "username", "age", "weight", "height", "goal", "level"];
+        const updates = {};
+
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        const user = await User.findByIdAndUpdate(req.userId, updates, {
+            new: true,
+            runValidators: true,
+        }).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "Utilisateur introuvable" });
+        }
+
+        res.json(toPublicUser(user));
+    } catch {
+        res.status(500).json({ message: "Erreur modification profil" });
     }
 };

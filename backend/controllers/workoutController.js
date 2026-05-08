@@ -23,17 +23,27 @@ exports.createWorkout = async (req, res) => {
             return res.status(400).json({ message: "Titre et date requis" });
         }
 
+        const cleanedExercises = Array.isArray(exercises)
+            ? exercises.map((exercise) => ({
+                name: exercise.name,
+                sets: exercise.sets || 0,
+                reps: exercise.reps || 0,
+                weight: exercise.weight || 0,
+            }))
+            : [];
+
         const workout = await Workout.create({
             userId: req.userId,
             title,
             date,
             duration: duration || 0,
             completed: completed || false,
-            exercises: exercises || [],
+            exercises: cleanedExercises,
         });
 
         res.status(201).json(workout);
     } catch (error) {
+        console.error("Erreur création workout:", error);
         res.status(500).json({ message: "Erreur création workout" });
     }
 };

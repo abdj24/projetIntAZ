@@ -1,4 +1,4 @@
-//Classe générée par IA
+//Généré par IA
 
 export function formaterDate(date: string): string {
     const [annee, mois, jour] = date.split("-");

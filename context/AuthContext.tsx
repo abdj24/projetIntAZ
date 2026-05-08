@@ -1,17 +1,8 @@
 //Généré par IA
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { login as apiLogin, register as apiRegister } from "@/services/api";
-
-type User = {
-    id?: string;
-    _id?: string;
-    name: string;
-    username: string;
-    email: string;
-    goal?: string;
-};
+import { getMe, login as apiLogin, register as apiRegister, updateMe } from "@/services/api";
+import { User } from "@/types/models";
 
 type AuthContextType = {
     user: User | null;
@@ -24,6 +15,7 @@ type AuthContextType = {
         email: string,
         password: string
     ) => Promise<void>;
+    updateProfile: (updates: Partial<User>) => Promise<void>;
     logout: () => Promise<void>;
 };
 
@@ -38,14 +30,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadSession();
     }, []);
 
+    async function clearSession() {
+        await AsyncStorage.removeItem("token");
+        await AsyncStorage.removeItem("user");
+        setToken(null);
+        setUser(null);
+    }
+
     async function loadSession() {
         try {
             const savedToken = await AsyncStorage.getItem("token");
             const savedUser = await AsyncStorage.getItem("user");
 
-            if (savedToken && savedUser) {
-                setToken(savedToken);
-                setUser(JSON.parse(savedUser));
+            if (!savedToken || !savedUser) {
+                await clearSession();
+                return;
+            }
+
+            setToken(savedToken);
+            setUser(JSON.parse(savedUser));
+
+            try {
+                const freshUser = await getMe(savedToken);
+                await AsyncStorage.setItem("user", JSON.stringify(freshUser));
+                setUser(freshUser);
+            } catch {
+                await clearSession();
             }
         } finally {
             setLoading(false);
@@ -85,12 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
     }
 
-    async function logout() {
-        await AsyncStorage.removeItem("token");
-        await AsyncStorage.removeItem("user");
+    async function updateProfile(updates: Partial<User>) {
+        const currentToken = token || (await AsyncStorage.getItem("token"));
 
-        setToken(null);
-        setUser(null);
+        if (!currentToken) {
+            throw new Error("Session expirée. Déconnecte-toi puis reconnecte-toi.");
+        }
+
+        const updatedUser = await updateMe(currentToken, updates);
+
+        await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+    }
+
+    async function logout() {
+        await clearSession();
     }
 
     return (
@@ -101,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 loading,
                 login,
                 register,
+                updateProfile,
                 logout,
             }}
         >

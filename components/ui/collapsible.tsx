@@ -1,3 +1,4 @@
+//Généré par IA
 import { PropsWithChildren, useState } from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 

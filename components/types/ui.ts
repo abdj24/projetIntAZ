@@ -1,4 +1,4 @@
-// Classe générée par IA
+//Généré par IA
 
 export type UiColors = {
     screenBackground: string;

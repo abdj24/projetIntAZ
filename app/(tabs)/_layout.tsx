@@ -1,15 +1,23 @@
 //Généré par IA
 
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/context";
 
 export default function TabLayout() {
     const { theme } = useTheme();
+    const { user, token, loading } = useAuth();
+
+    if (loading) return null;
+
+    if (!user || !token) {
+        return <Redirect href="/login" />;
+    }
 
     return (
         <Tabs

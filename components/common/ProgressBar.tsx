@@ -1,4 +1,4 @@
-//Classe générée par IA
+//Généré par IA
 
 import { View } from "react-native";
 import { UiColors } from "../types/ui";

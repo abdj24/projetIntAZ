@@ -1,4 +1,4 @@
-//Classe générée par IA
+//Généré par IA
 
 import { Colors } from "@/constants/theme";
 import { UiColors } from "../types/ui";

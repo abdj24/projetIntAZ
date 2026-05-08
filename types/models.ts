@@ -1,3 +1,4 @@
+//Généré par IA
 export type GoalType = "lose_weight" | "gain_muscle" | "maintain";
 export type LevelType = "debutant" | "intermediaire" | "avance";
 export type PlaceType = "Gym" | "Parc";
@@ -7,12 +8,15 @@ export type MessageSender = "utilisateur" | "assistant";
 
 export type User = {
     id: string;
+    _id?: string;
     name: string;
-    age: number;
-    weight: number;
-    height: number;
-    goal: GoalType;
-    level: LevelType;
+    username?: string;
+    email?: string;
+    age?: number | null;
+    weight?: number | null;
+    height?: number | null;
+    goal?: GoalType | string;
+    level?: LevelType | string;
 };
 
 export type Exercise = {
@@ -47,7 +51,10 @@ export type ChatMessage = {
 
 export type Place = {
     id: string;
+    _id?: string;
     nom: string;
     type: PlaceType;
     description: string;
+    latitude?: number;
+    longitude?: number;
 };

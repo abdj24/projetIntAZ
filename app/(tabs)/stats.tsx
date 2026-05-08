@@ -1,26 +1,18 @@
-//Cette classe est générée par IA
+//Généré par IA
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { mockUser, mockWeightHistory, mockWorkouts } from "@/data/mockData";
+import { useFocusEffect } from "@react-navigation/native";
 import { Workout } from "@/types/models";
-import {
-    getSessionWorkouts,
-    subscribeSessionWorkouts,
-    clearSessionWorkouts,
-} from "@/data/workoutSession";
-import {
-    getEffectiveToday,
-    getTodayOverride,
-    setTodayOverride,
-    subscribeTodayOverride,
-} from "@/data/testToday";
 import { useTheme } from "@/context/context";
+import { useAuth } from "@/context/AuthContext";
+import { useWorkouts } from "@/context/WorkoutContext";
 
 import { SectionCard } from "@/components/common/SectionCard";
 import { StatCard } from "@/components/common/StatCard";
 import { getUiColors } from "@/components/utils/themeUtils";
+import { toLocalDateString } from "@/components/utils/dateUtils";
 
 type JourCalendrier = {
     dateString: string;
@@ -41,35 +33,23 @@ type MarkedDates = {
 
 export default function StatsScreen() {
     const { theme } = useTheme();
+    const { user } = useAuth();
+    const { workouts, refreshWorkouts } = useWorkouts();
     const ui = getUiColors(theme);
 
-    const [today, setToday] = useState<string>(getEffectiveToday());
-    const [dateChoisie, setDateChoisie] = useState<string>(getEffectiveToday());
+    const today = toLocalDateString(new Date());
+    const [dateChoisie, setDateChoisie] = useState<string>(today);
     const [workoutChoisiId, setWorkoutChoisiId] = useState<string | null>(null);
-    const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(
-        getSessionWorkouts()
+
+    useFocusEffect(
+        useCallback(() => {
+            void refreshWorkouts();
+        }, [refreshWorkouts])
     );
 
-    useEffect(() => {
-        const unsubscribeWorkouts = subscribeSessionWorkouts(() => {
-            setSessionWorkouts([...getSessionWorkouts()]);
-        });
-
-        const unsubscribeToday = subscribeTodayOverride(() => {
-            const nouveauToday = getEffectiveToday();
-            setToday(nouveauToday);
-            setDateChoisie(nouveauToday);
-        });
-
-        return () => {
-            unsubscribeWorkouts();
-            unsubscribeToday();
-        };
-    }, []);
-
     const tousLesWorkouts = useMemo(() => {
-        return [...sessionWorkouts, ...mockWorkouts];
-    }, [sessionWorkouts]);
+        return [...workouts];
+    }, [workouts]);
 
     const workoutsParDate = useMemo(() => {
         const groupes: { [date: string]: Workout[] } = {};
@@ -82,8 +62,15 @@ export default function StatsScreen() {
         return groupes;
     }, [tousLesWorkouts]);
 
-    const workoutsDuJour = workoutsParDate[dateChoisie] || [];
-    const statsAujourdhui = workoutsParDate[today] || [];
+    const workoutsDuJour = useMemo(
+        () => workoutsParDate[dateChoisie] || [],
+        [dateChoisie, workoutsParDate]
+    );
+
+    const statsAujourdhui = useMemo(
+        () => workoutsParDate[today] || [],
+        [today, workoutsParDate]
+    );
 
     const totalWorkoutsAujourdhui = statsAujourdhui.length;
 
@@ -101,15 +88,8 @@ export default function StatsScreen() {
         0
     );
 
-    const poidsActuel =
-        mockWeightHistory.length > 0
-            ? mockWeightHistory[mockWeightHistory.length - 1].weight
-            : mockUser.weight;
-
-    const premierPoids =
-        mockWeightHistory.length > 0 ? mockWeightHistory[0].weight : mockUser.weight;
-
-    const evolutionPoids = Number((poidsActuel - premierPoids).toFixed(1));
+    const poidsActuel = user?.weight ?? 0;
+    const evolutionPoids = 0;
 
     const markedDates: MarkedDates = useMemo(() => {
         const marked: MarkedDates = {};
@@ -163,27 +143,6 @@ export default function StatsScreen() {
         setDateChoisie(day.dateString);
     }
 
-    function definirJourSelectionneCommeAujourdhui() {
-        setTodayOverride(dateChoisie);
-        setToday(dateChoisie);
-        setDateChoisie(dateChoisie);
-    }
-
-    function revenirAuVraiAujourdhui() {
-        setTodayOverride(null);
-        const vraiToday = getEffectiveToday();
-        setToday(vraiToday);
-        setDateChoisie(vraiToday);
-    }
-
-    function viderSeancesDeTest() {
-        clearSessionWorkouts();
-        setTodayOverride(null);
-        const vraiToday = getEffectiveToday();
-        setToday(vraiToday);
-        setDateChoisie(vraiToday);
-    }
-
     return (
         <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
             <ScrollView
@@ -219,7 +178,6 @@ export default function StatsScreen() {
 
                     <Text style={{ color: ui.textMuted, marginBottom: 14 }}>
                         Jour utilisé pour les stats : {today}
-                        {getTodayOverride() ? " (mode test)" : ""}
                     </Text>
 
                     <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
@@ -254,19 +212,6 @@ export default function StatsScreen() {
                         <StatCard label="Temps total" value={`${dureeTotaleCompletee} min`} ui={ui} />
                     </View>
 
-                    <TouchableOpacity
-                        onPress={viderSeancesDeTest}
-                        style={{
-                            backgroundColor: ui.cardSecondary,
-                            borderRadius: 14,
-                            padding: 14,
-                            alignItems: "center",
-                        }}
-                    >
-                        <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
-                            Vider les séances de test
-                        </Text>
-                    </TouchableOpacity>
                 </SectionCard>
 
                 <SectionCard ui={ui}>
@@ -293,52 +238,6 @@ export default function StatsScreen() {
                             borderRadius: 16,
                         }}
                     />
-                </SectionCard>
-
-                <SectionCard ui={ui}>
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 8,
-                        }}
-                    >
-                        Test calendrier 🧪
-                    </Text>
-
-                    <Text style={{ color: ui.textMuted, fontSize: 14, marginBottom: 14 }}>
-                        Date sélectionnée : {dateChoisie}
-                    </Text>
-
-                    <TouchableOpacity
-                        onPress={definirJourSelectionneCommeAujourdhui}
-                        style={{
-                            backgroundColor: ui.accent,
-                            borderRadius: 16,
-                            padding: 16,
-                            alignItems: "center",
-                            marginBottom: 12,
-                        }}
-                    >
-                        <Text style={{ color: ui.accentText, fontWeight: "800" }}>
-                            Définir ce jour comme aujourd’hui
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={revenirAuVraiAujourdhui}
-                        style={{
-                            backgroundColor: ui.cardSecondary,
-                            borderRadius: 16,
-                            padding: 16,
-                            alignItems: "center",
-                        }}
-                    >
-                        <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
-                            Revenir au vrai aujourd’hui
-                        </Text>
-                    </TouchableOpacity>
                 </SectionCard>
 
                 <SectionCard ui={ui} marginBottom={0}>

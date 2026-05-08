@@ -1,6 +1,6 @@
-//Cette classe est générée par IA
+//Généré par IA
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Modal,
     ScrollView,
@@ -9,14 +9,12 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { Colors } from "@/constants/theme";
 import { useTheme } from "@/context/context";
-import { mockUser } from "@/data/mockData";
-import {
-    getSessionWorkouts,
-    subscribeSessionWorkouts,
-} from "@/data/workoutSession";
+import { useAuth } from "@/context/AuthContext";
+import { useWorkouts } from "@/context/WorkoutContext";
 import { Workout } from "@/types/models";
 
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -44,6 +42,8 @@ function getDaysInMonth(year: number, monthIndex: number) {
 
 export default function ProfileScreen() {
     const { theme } = useTheme();
+    const { user, updateProfile, logout } = useAuth();
+    const { workouts, refreshWorkouts } = useWorkouts();
     const colors = Colors[theme];
 
     const ui = {
@@ -63,14 +63,10 @@ export default function ProfileScreen() {
         selectedSubtext: theme === "dark" ? "#0B2F2B" : "#0B5F58",
     };
 
-    const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(
-        getSessionWorkouts()
-    );
-
-    const [prenomAffiche, setPrenomAffiche] = useState("Tester");
-    const [usernameAffiche, setUsernameAffiche] = useState("Tester");
+    const [prenomAffiche, setPrenomAffiche] = useState(user?.name ?? "");
+    const [usernameAffiche, setUsernameAffiche] = useState(user?.username ?? "");
     const [objectifAffiche, setObjectifAffiche] = useState(
-        String(mockUser.goal ?? "Perdre du gras / gagner en discipline")
+        String(user?.goal ?? "Devenir plus actif")
     );
 
     const [nomDraft, setNomDraft] = useState(prenomAffiche);
@@ -87,19 +83,25 @@ export default function ProfileScreen() {
         return new Date(now.getFullYear(), now.getMonth(), 1);
     });
 
-    useEffect(() => {
-        const unsubscribe = subscribeSessionWorkouts(() => {
-            setSessionWorkouts([...getSessionWorkouts()]);
-        });
+    useFocusEffect(
+        useCallback(() => {
+            void refreshWorkouts();
+        }, [refreshWorkouts])
+    );
 
-        return () => unsubscribe();
-    }, []);
+    useEffect(() => {
+        if (!user) return;
+
+        setPrenomAffiche(user.name);
+        setUsernameAffiche(user.username ?? "");
+        setObjectifAffiche(String(user.goal ?? "Devenir plus actif"));
+    }, [user]);
 
     const allWorkouts = useMemo(() => {
-        return [...sessionWorkouts]
+        return [...workouts]
             .filter((workout) => workout.completed)
             .sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
-    }, [sessionWorkouts]);
+    }, [workouts]);
 
     const totalWorkouts = allWorkouts.length;
 
@@ -245,14 +247,16 @@ export default function ProfileScreen() {
         setProfilModalVisible(true);
     }
 
-    function saveProfile() {
+    async function saveProfile() {
         const cleanName = nomDraft.trim();
         const cleanUsername = usernameDraft.trim().replace(/^@+/, "");
         const cleanGoal = objectifDraft.trim();
 
-        if (cleanName.length > 0) setPrenomAffiche(cleanName);
-        if (cleanUsername.length > 0) setUsernameAffiche(cleanUsername);
-        if (cleanGoal.length > 0) setObjectifAffiche(cleanGoal);
+        await updateProfile({
+            name: cleanName.length > 0 ? cleanName : prenomAffiche,
+            username: cleanUsername.length > 0 ? cleanUsername : usernameAffiche,
+            goal: cleanGoal.length > 0 ? cleanGoal : objectifAffiche,
+        });
 
         setProfilModalVisible(false);
     }
@@ -620,6 +624,26 @@ export default function ProfileScreen() {
                             }}
                         >
                         </View>
+
+                        <TouchableOpacity
+                            onPress={async () => {
+                                await logout();
+                                setSettingsModalVisible(false);
+                            }}
+                            style={{
+                                backgroundColor: "#3B0D0D",
+                                borderRadius: 14,
+                                padding: 14,
+                                alignItems: "center",
+                                marginBottom: 12,
+                                borderWidth: 1,
+                                borderColor: "#EF4444",
+                            }}
+                        >
+                            <Text style={{ color: "#FCA5A5", fontWeight: "800" }}>
+                                Se déconnecter
+                            </Text>
+                        </TouchableOpacity>
 
                         <TouchableOpacity
                             onPress={() => setSettingsModalVisible(false)}

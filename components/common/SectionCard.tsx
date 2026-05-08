@@ -1,4 +1,4 @@
-//Classe générée par IA
+//Généré par IA
 
 import { ReactNode } from "react";
 import { View } from "react-native";

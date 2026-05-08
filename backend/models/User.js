@@ -1,4 +1,4 @@
-//Cette classe a été générée par IA
+//Généré par IA
 
 const mongoose = require("mongoose");
 
@@ -25,9 +25,25 @@ const UserSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        age: {
+            type: Number,
+            default: null,
+        },
+        weight: {
+            type: Number,
+            default: null,
+        },
+        height: {
+            type: Number,
+            default: null,
+        },
         goal: {
             type: String,
             default: "Devenir plus actif",
+        },
+        level: {
+            type: String,
+            default: "debutant",
         },
     },
     { timestamps: true }
