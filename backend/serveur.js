@@ -16,6 +16,7 @@ const friendRoutes = require("./routes/friendRoutes");
 
 // Initialisation de l'application Express.
 const app = express();
+let mongoConnecting = false;
 
 // Activation du CORS et du JSON pour les requetes API.
 app.use(cors());
@@ -32,6 +33,28 @@ mongoose
     .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
     .then(() => console.log("MongoDB connecté"))
     .catch((error) => console.error("Erreur MongoDB:", error));
+
+// Relance de la connexion si Atlas refuse temporairement l'acces.
+async function retryMongoConnection() {
+    if (mongoConnecting || mongoose.connection.readyState === 1) return;
+
+    try {
+        mongoConnecting = true;
+        await mongoose.connect(process.env.MONGO_URI, {
+            serverSelectionTimeoutMS: 5000,
+        });
+    } catch (error) {
+        console.error("Nouvelle tentative MongoDB echouee:", error.message);
+    } finally {
+        mongoConnecting = false;
+    }
+}
+
+mongoose.connection.on("connected", () => {
+    console.log("MongoDB connecte");
+});
+
+setInterval(retryMongoConnection, 5000);
 
 // Route de test pour verifier que l'API et MongoDB repondent.
 app.get("/", (req, res) => {

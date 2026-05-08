@@ -1,50 +1,210 @@
-# Welcome to your Expo app 👋
+# Endorphine
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Endorphine est une application de fitness faite avec Expo React Native, Express et MongoDB.
 
-## Get started
+L'application permet de :
 
-1. Install dependencies
+- creer un compte et se connecter;
+- completer et sauvegarder des workouts;
+- voir les stats, le calendrier et l'historique du poids;
+- publier des seances dans le feed social;
+- ajouter des amis, recevoir des demandes, commenter et reagir;
+- afficher une carte avec des gyms et parcs;
+- utiliser un assistant fitness.
 
-   ```bash
-   npm install
-   ```
+## Technologies
 
-2. Start the app
+- Expo React Native
+- React / TypeScript
+- Expo Router
+- Express
+- MongoDB avec Mongoose
+- JWT pour l'authentification
 
-   ```bash
-   npx expo start
-   ```
+## Installation
 
-In the output, you'll find options to open the app in a
+Avant de lancer le projet, installer :
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Node.js
+- npm
+- MongoDB local ou MongoDB Atlas
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Ensuite, dans le dossier du projet :
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Cette commande installe tous les packages listes dans `package.json`, incluant Expo, React Native, Express, Mongoose, JWT, AsyncStorage, les calendriers, les graphiques et les autres librairies utilisees.
 
-## Learn more
+Si le projet est importe sans `node_modules`, il faut toujours refaire :
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm install
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Variables d'environnement
 
-## Join the community
+Creer un fichier `.env` a la racine du projet.
 
-Join our community of developers creating universal apps.
+Exemple :
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```env
+MONGO_URI=mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=change_me
+PORT=3000
+```
+
+Le projet utilise une seule base de donnees: `test`. Dans l'URL MongoDB Atlas, le nom de la base est la partie apres `.mongodb.net/`.
+
+## Lancer l'application
+
+Pour lancer le backend et le frontend en meme temps :
+
+```bash
+npm start
+```
+
+Sur Windows, si `npm start` ne marche pas :
+
+```bash
+npm.cmd start
+```
+
+Cette commande lance :
+
+- le backend Express sur `http://localhost:3000`;
+- Expo Web pour ouvrir l'application dans le navigateur.
+
+## Lancer separement
+
+Backend seulement :
+
+```bash
+npm run backend
+```
+
+Frontend seulement :
+
+```bash
+npm run frontend
+```
+
+Lint :
+
+```bash
+npm run lint
+```
+
+Verification TypeScript :
+
+```bash
+npx tsc --noEmit
+```
+
+## Tester le backend
+
+Une fois le backend lance, ouvrir :
+
+```text
+http://localhost:3000
+```
+
+La reponse devrait ressembler a :
+
+```json
+{
+  "message": "API Endorphine fonctionne",
+  "mongoConnected": true
+}
+```
+
+Si `mongoConnected` vaut `false`, MongoDB n'est pas connecte.
+
+## Si localhost:3000 ne marche pas
+
+Verifier dans cet ordre :
+
+1. Le backend est-il lance ?
+
+```bash
+npm run backend
+```
+
+2. Le fichier `.env` existe-t-il a la racine ?
+
+Il doit contenir au minimum :
+
+```env
+MONGO_URI=mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=change_me
+PORT=3000
+```
+
+3. MongoDB est-il demarre ?
+
+Avec MongoDB local, verifier que le service MongoDB tourne.
+
+Avec MongoDB Atlas, verifier :
+
+- l'URL de connexion;
+- le mot de passe;
+- l'adresse IP autorisee dans Atlas;
+- le nom de la base.
+
+4. Le port 3000 est-il deja utilise ?
+
+Si un autre serveur utilise deja `3000`, changer le port dans `.env` :
+
+```env
+PORT=3001
+```
+
+Puis relancer le backend.
+
+Attention : si le port backend change, il faut aussi adapter l'URL API dans `services/api.ts`.
+
+5. Le frontend affiche `Failed to fetch` ?
+
+Cela veut souvent dire que :
+
+- le backend n'est pas lance;
+- le backend n'est pas sur le bon port;
+- MongoDB n'est pas connecte;
+- le navigateur ou l'app n'arrive pas a joindre `localhost:3000`.
+
+Pour le web, l'API utilise :
+
+```text
+http://localhost:3000
+```
+
+Pour mobile avec Expo Go, l'app essaie d'utiliser l'adresse reseau de l'ordinateur qui lance Expo.
+
+## Structure du projet
+
+```text
+app/                Ecrans de l'application
+backend/            Serveur Express, routes, controllers et models MongoDB
+components/         Composants reutilisables
+context/            Contextes React pour auth, theme et workouts
+services/api.ts     Appels API frontend vers le backend
+types/              Types TypeScript
+constants/          Couleurs et constantes
+```
+
+## Scripts utiles
+
+```bash
+npm start
+npm run backend
+npm run frontend
+npm run lint
+npx tsc --noEmit
+```
+
+## Notes
+
+- Ne pas partager le vrai `.env`.
+- Ne pas envoyer `node_modules` dans GitHub.
+- Si quelqu'un importe le projet, il doit faire `npm install`, creer son `.env`, lancer MongoDB, puis faire `npm start`.
