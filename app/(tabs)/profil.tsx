@@ -1,11 +1,28 @@
+//Cette classe est générée par IA
+
 import { useEffect, useMemo, useState } from "react";
-import {Modal, ScrollView, Text, TextInput, TouchableOpacity, View,} from "react-native";
-import { BarChart } from "react-native-gifted-charts";
+import {
+    Modal,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+
 import { Colors } from "@/constants/theme";
 import { useTheme } from "@/context/context";
 import { mockUser } from "@/data/mockData";
-import {getSessionWorkouts, subscribeSessionWorkouts,} from "@/data/workoutSession";
+import {
+    getSessionWorkouts,
+    subscribeSessionWorkouts,
+} from "@/data/workoutSession";
 import { Workout } from "@/types/models";
+
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import StatsGrid from "@/components/profile/StatsGrid";
+import MonthlyWorkoutChart from "@/components/profile/MonthlyWorkoutChart";
+import RecentWorkouts from "@/components/profile/RecentWorkouts";
 
 function getMonthName(date: Date) {
     return date.toLocaleDateString("fr-CA", {
@@ -50,15 +67,15 @@ export default function ProfileScreen() {
         getSessionWorkouts()
     );
 
-    const [prenomAffiche, setPrenomAffiche] = useState<string>("Jougbouny");
-    const [usernameAffiche, setUsernameAffiche] = useState<string>("jougbounyfit");
-    const [objectifAffiche, setObjectifAffiche] = useState<string>(
+    const [prenomAffiche, setPrenomAffiche] = useState("Tester");
+    const [usernameAffiche, setUsernameAffiche] = useState("Tester");
+    const [objectifAffiche, setObjectifAffiche] = useState(
         String(mockUser.goal ?? "Perdre du gras / gagner en discipline")
     );
 
-    const [nomDraft, setNomDraft] = useState<string>(prenomAffiche);
-    const [usernameDraft, setUsernameDraft] = useState<string>(usernameAffiche);
-    const [objectifDraft, setObjectifDraft] = useState<string>(objectifAffiche);
+    const [nomDraft, setNomDraft] = useState(prenomAffiche);
+    const [usernameDraft, setUsernameDraft] = useState(usernameAffiche);
+    const [objectifDraft, setObjectifDraft] = useState(objectifAffiche);
 
     const [profilModalVisible, setProfilModalVisible] = useState(false);
     const [settingsModalVisible, setSettingsModalVisible] = useState(false);
@@ -74,15 +91,14 @@ export default function ProfileScreen() {
         const unsubscribe = subscribeSessionWorkouts(() => {
             setSessionWorkouts([...getSessionWorkouts()]);
         });
+
         return () => unsubscribe();
     }, []);
 
     const allWorkouts = useMemo(() => {
         return [...sessionWorkouts]
             .filter((workout) => workout.completed)
-            .sort((a, b) =>
-                `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`)
-            );
+            .sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
     }, [sessionWorkouts]);
 
     const totalWorkouts = allWorkouts.length;
@@ -98,6 +114,7 @@ export default function ProfileScreen() {
             if (!grouped[workout.date]) {
                 grouped[workout.date] = [];
             }
+
             grouped[workout.date].push(workout);
         }
 
@@ -118,6 +135,7 @@ export default function ProfileScreen() {
         for (let i = 1; i < uniqueDates.length; i++) {
             const prev = new Date(uniqueDates[i - 1]);
             const curr = new Date(uniqueDates[i]);
+
             const diffDays = Math.round(
                 (prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)
             );
@@ -194,9 +212,6 @@ export default function ProfileScreen() {
         return allWorkouts.slice(0, 6);
     }, [allWorkouts]);
 
-    const selectedWorkout =
-        recentWorkouts.find((workout) => workout.id === selectedWorkoutId) || null;
-
     useEffect(() => {
         if (recentWorkouts.length > 0) {
             const stillExists = recentWorkouts.some(
@@ -246,7 +261,11 @@ export default function ProfileScreen() {
         <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
             <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{ padding: 20, paddingTop: 30, paddingBottom: 140 }}
+                contentContainerStyle={{
+                    padding: 20,
+                    paddingTop: 30,
+                    paddingBottom: 140,
+                }}
             >
                 <Text
                     style={{
@@ -259,410 +278,38 @@ export default function ProfileScreen() {
                     Profil
                 </Text>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 20,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                        alignItems: "center",
-                    }}
-                >
-                    <View
-                        style={{
-                            width: 92,
-                            height: 92,
-                            borderRadius: 46,
-                            backgroundColor: ui.accent,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginBottom: 14,
-                        }}
-                    >
-                        <Text
-                            style={{
-                                fontSize: 30,
-                                fontWeight: "900",
-                                color: ui.accentText,
-                            }}
-                        >
-                            {prenomAffiche.charAt(0).toUpperCase()}
-                        </Text>
-                    </View>
+                <ProfileHeader
+                    ui={ui}
+                    prenom={prenomAffiche}
+                    username={usernameAffiche}
+                    rank={rank}
+                />
 
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 24,
-                            fontWeight: "800",
-                            marginBottom: 4,
-                        }}
-                    >
-                        {prenomAffiche}
-                    </Text>
+                <StatsGrid
+                    ui={ui}
+                    totalWorkouts={totalWorkouts}
+                    activeDays={activeDays}
+                    totalExercises={totalExercises}
+                    streak={streak}
+                />
 
-                    <Text
-                        style={{
-                            color: ui.textMuted,
-                            fontSize: 15,
-                            marginBottom: 10,
-                        }}
-                    >
-                        @{usernameAffiche}
-                    </Text>
+                <MonthlyWorkoutChart
+                    ui={ui}
+                    selectedMonth={selectedMonth}
+                    previousMonth={previousMonth}
+                    nextMonth={nextMonth}
+                    monthlyTotal={monthlyTotal}
+                    monthlyChartData={monthlyChartData}
+                    maxChartValue={maxChartValue}
+                    getMonthName={getMonthName}
+                />
 
-                    <View
-                        style={{
-                            backgroundColor: ui.cardSecondary,
-                            borderRadius: 999,
-                            paddingVertical: 10,
-                            paddingHorizontal: 18,
-                        }}
-                    >
-                        <Text
-                            style={{
-                                color: ui.badgeText,
-                                fontSize: 15,
-                                fontWeight: "800",
-                            }}
-                        >
-                            {rank}
-                        </Text>
-                    </View>
-                </View>
-
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 14,
-                        }}
-                    >
-                        Mes stats
-                    </Text>
-
-                    <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {totalWorkouts}
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
-                                Workouts complétés
-                            </Text>
-                        </View>
-
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {activeDays}
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
-                                Jours actifs
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={{ flexDirection: "row", gap: 12 }}>
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {totalExercises}
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
-                                Exercices
-                            </Text>
-                        </View>
-
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {streak}
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
-                                Streak
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 14,
-                        }}
-                    >
-                        <Text
-                            style={{
-                                color: ui.textPrimary,
-                                fontSize: 18,
-                                fontWeight: "700",
-                            }}
-                        >
-                            Workouts du mois
-                        </Text>
-
-                        <Text
-                            style={{
-                                color: ui.accent,
-                                fontSize: 18,
-                                fontWeight: "800",
-                            }}
-                        >
-                            {monthlyTotal}
-                        </Text>
-                    </View>
-
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 16,
-                        }}
-                    >
-                        <TouchableOpacity
-                            onPress={previousMonth}
-                            style={{
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 12,
-                                paddingVertical: 10,
-                                paddingHorizontal: 14,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
-                                ←
-                            </Text>
-                        </TouchableOpacity>
-
-                        <Text
-                            style={{
-                                color: ui.textPrimary,
-                                fontSize: 16,
-                                fontWeight: "700",
-                                textTransform: "capitalize",
-                            }}
-                        >
-                            {getMonthName(selectedMonth)}
-                        </Text>
-
-                        <TouchableOpacity
-                            onPress={nextMonth}
-                            style={{
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 12,
-                                paddingVertical: 10,
-                                paddingHorizontal: 14,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
-                                →
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <BarChart
-                            key={`${selectedMonth.getFullYear()}-${selectedMonth.getMonth()}-${monthlyChartData.length}-${monthlyTotal}`}
-                            data={monthlyChartData}
-                            barWidth={16}
-                            spacing={10}
-                            initialSpacing={10}
-                            endSpacing={28}
-                            roundedTop
-                            roundedBottom
-                            hideRules={false}
-                            rulesColor={ui.chartGrid}
-                            xAxisColor={ui.chartAxis}
-                            yAxisColor={ui.chartAxis}
-                            yAxisTextStyle={{ color: ui.textMuted, fontSize: 11 }}
-                            xAxisLabelTextStyle={{ color: ui.textMuted, fontSize: 10 }}
-                            noOfSections={4}
-                            maxValue={maxChartValue}
-                            height={180}
-                            width={Math.max(monthlyChartData.length * 30, 360)}
-                        />
-                    </ScrollView>
-                </View>
-
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 14,
-                        }}
-                    >
-                        Séances récentes
-                    </Text>
-
-                    {recentWorkouts.length === 0 && (
-                        <Text style={{ color: ui.textMuted, fontSize: 15 }}>
-                            Aucune séance enregistrée.
-                        </Text>
-                    )}
-
-                    {recentWorkouts.length > 0 && (
-                        <>
-                            {recentWorkouts.map((workout) => (
-                                <TouchableOpacity
-                                    key={workout.id}
-                                    onPress={() => setSelectedWorkoutId(workout.id)}
-                                    style={{
-                                        backgroundColor:
-                                            selectedWorkoutId === workout.id
-                                                ? ui.accent
-                                                : ui.cardSecondary,
-                                        borderRadius: 16,
-                                        padding: 16,
-                                        marginBottom: 12,
-                                    }}
-                                >
-                                    <Text
-                                        style={{
-                                            color:
-                                                selectedWorkoutId === workout.id
-                                                    ? ui.accentText
-                                                    : ui.textPrimary,
-                                            fontSize: 16,
-                                            fontWeight: "700",
-                                            marginBottom: 4,
-                                        }}
-                                    >
-                                        {workout.title}
-                                    </Text>
-
-                                    <Text
-                                        style={{
-                                            color:
-                                                selectedWorkoutId === workout.id
-                                                    ? ui.selectedSubtext
-                                                    : ui.textMuted,
-                                            fontSize: 13,
-                                        }}
-                                    >
-                                        {workout.date} • {workout.duration} min •{" "}
-                                        {workout.exercises.length} exo(s)
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-
-                            {selectedWorkout && (
-                                <View
-                                    style={{
-                                        backgroundColor: ui.cardSecondary,
-                                        borderRadius: 16,
-                                        padding: 16,
-                                        marginTop: 4,
-                                    }}
-                                >
-                                    <Text
-                                        style={{
-                                            color: ui.textPrimary,
-                                            fontSize: 21,
-                                            fontWeight: "800",
-                                            marginBottom: 14,
-                                        }}
-                                    >
-                                        {selectedWorkout.title}
-                                    </Text>
-
-                                    {selectedWorkout.exercises.map((exercise) => (
-                                        <View
-                                            key={exercise.id}
-                                            style={{
-                                                backgroundColor: ui.cardBackground,
-                                                borderRadius: 12,
-                                                padding: 14,
-                                                marginBottom: 10,
-                                            }}
-                                        >
-                                            <Text
-                                                style={{
-                                                    color: ui.textPrimary,
-                                                    fontSize: 15,
-                                                    fontWeight: "700",
-                                                    marginBottom: 4,
-                                                }}
-                                            >
-                                                {exercise.name}
-                                            </Text>
-
-                                            <Text
-                                                style={{
-                                                    color: ui.textMuted,
-                                                    fontSize: 14,
-                                                }}
-                                            >
-                                                {exercise.sets} séries • {exercise.reps} reps
-                                                {exercise.weight ? ` • ${exercise.weight} kg` : ""}
-                                            </Text>
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
-                        </>
-                    )}
-                </View>
+                <RecentWorkouts
+                    ui={ui}
+                    recentWorkouts={recentWorkouts}
+                    selectedWorkoutId={selectedWorkoutId}
+                    setSelectedWorkoutId={setSelectedWorkoutId}
+                />
 
                 <View
                     style={{
@@ -840,7 +487,9 @@ export default function ProfileScreen() {
                             }}
                         />
 
-                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>Username</Text>
+                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
+                            Username
+                        </Text>
                         <TextInput
                             value={usernameDraft}
                             onChangeText={setUsernameDraft}
@@ -856,7 +505,9 @@ export default function ProfileScreen() {
                             }}
                         />
 
-                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>Objectif</Text>
+                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
+                            Objectif
+                        </Text>
                         <TextInput
                             value={objectifDraft}
                             onChangeText={setObjectifDraft}
@@ -946,7 +597,13 @@ export default function ProfileScreen() {
                                 marginBottom: 12,
                             }}
                         >
-                            <Text style={{ color: ui.textPrimary, fontWeight: "700", marginBottom: 4 }}>
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontWeight: "700",
+                                    marginBottom: 4,
+                                }}
+                            >
                                 Thème
                             </Text>
                             <Text style={{ color: ui.textMuted }}>
@@ -962,12 +619,6 @@ export default function ProfileScreen() {
                                 marginBottom: 12,
                             }}
                         >
-                            <Text style={{ color: ui.textPrimary, fontWeight: "700", marginBottom: 4 }}>
-                                Notifications
-                            </Text>
-                            <Text style={{ color: ui.textMuted }}>
-                                Option à brancher plus tard.
-                            </Text>
                         </View>
 
                         <TouchableOpacity

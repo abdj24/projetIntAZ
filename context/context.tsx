@@ -1,3 +1,5 @@
+//Généré par IA
+
 import React, { createContext, useContext, useState } from "react";
 
 type ThemeType = "light" | "dark";

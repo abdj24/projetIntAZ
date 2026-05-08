@@ -1,12 +1,26 @@
+//Cette classe est générée par IA
+
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { mockUser, mockWeightHistory, mockWorkouts } from "@/data/mockData";
 import { Workout } from "@/types/models";
-import {getSessionWorkouts, subscribeSessionWorkouts, clearSessionWorkouts,} from "@/data/workoutSession";
-import {getEffectiveToday, getTodayOverride, setTodayOverride, subscribeTodayOverride,} from "@/data/testToday";
-import { Colors } from "@/constants/theme";
+import {
+    getSessionWorkouts,
+    subscribeSessionWorkouts,
+    clearSessionWorkouts,
+} from "@/data/workoutSession";
+import {
+    getEffectiveToday,
+    getTodayOverride,
+    setTodayOverride,
+    subscribeTodayOverride,
+} from "@/data/testToday";
 import { useTheme } from "@/context/context";
+
+import { SectionCard } from "@/components/common/SectionCard";
+import { StatCard } from "@/components/common/StatCard";
+import { getUiColors } from "@/components/utils/themeUtils";
 
 type JourCalendrier = {
     dateString: string;
@@ -27,27 +41,14 @@ type MarkedDates = {
 
 export default function StatsScreen() {
     const { theme } = useTheme();
-    const colors = Colors[theme];
-
-    const ui = {
-        screenBackground: colors.background,
-        textPrimary: colors.text,
-        textMuted: theme === "dark" ? "#7C8799" : "#6B7280",
-        textSecondary: theme === "dark" ? "#93A1B5" : "#5F6B7A",
-        cardBackground: theme === "dark" ? "#0D1524" : "#F4F7FB",
-        cardSecondary: theme === "dark" ? "#121C2D" : "#E9EEF5",
-        cardTertiary: theme === "dark" ? "#182335" : "#DCE6F5",
-        border: theme === "dark" ? "#162033" : "#D8E0EA",
-        accent: "#2EE6D6",
-        accentText: "#070B14",
-        selfSubtext: theme === "dark" ? "#0B2F2B" : "#0B5F58",
-        disabledText: theme === "dark" ? "#3A465C" : "#A0AEC0",
-    };
+    const ui = getUiColors(theme);
 
     const [today, setToday] = useState<string>(getEffectiveToday());
     const [dateChoisie, setDateChoisie] = useState<string>(getEffectiveToday());
     const [workoutChoisiId, setWorkoutChoisiId] = useState<string | null>(null);
-    const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(getSessionWorkouts());
+    const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(
+        getSessionWorkouts()
+    );
 
     useEffect(() => {
         const unsubscribeWorkouts = subscribeSessionWorkouts(() => {
@@ -74,9 +75,7 @@ export default function StatsScreen() {
         const groupes: { [date: string]: Workout[] } = {};
 
         for (const workout of tousLesWorkouts) {
-            if (!groupes[workout.date]) {
-                groupes[workout.date] = [];
-            }
+            if (!groupes[workout.date]) groupes[workout.date] = [];
             groupes[workout.date].push(workout);
         }
 
@@ -88,17 +87,19 @@ export default function StatsScreen() {
 
     const totalWorkoutsAujourdhui = statsAujourdhui.length;
 
-    const totalExercicesAujourdhui = statsAujourdhui.reduce((total, workout) => {
-        return total + workout.exercises.length;
-    }, 0);
+    const totalExercicesAujourdhui = statsAujourdhui.reduce(
+        (total, workout) => total + workout.exercises.length,
+        0
+    );
 
-    const totalWorkoutsCompletes = tousLesWorkouts.filter(
-        (workout) => workout.completed
-    ).length;
+    const workoutsCompletes = tousLesWorkouts.filter((workout) => workout.completed);
 
-    const dureeTotaleCompletee = tousLesWorkouts
-        .filter((workout) => workout.completed)
-        .reduce((total, workout) => total + workout.duration, 0);
+    const totalWorkoutsCompletes = workoutsCompletes.length;
+
+    const dureeTotaleCompletee = workoutsCompletes.reduce(
+        (total, workout) => total + workout.duration,
+        0
+    );
 
     const poidsActuel =
         mockWeightHistory.length > 0
@@ -141,7 +142,7 @@ export default function StatsScreen() {
         }
 
         return marked;
-    }, [workoutsParDate, dateChoisie, today]);
+    }, [workoutsParDate, dateChoisie, today, ui.accent]);
 
     const workoutChoisi =
         workoutsDuJour.find((workout) => workout.id === workoutChoisiId) || null;
@@ -152,9 +153,7 @@ export default function StatsScreen() {
                 (workout) => workout.id === workoutChoisiId
             );
 
-            if (!existeEncore) {
-                setWorkoutChoisiId(workoutsDuJour[0].id);
-            }
+            if (!existeEncore) setWorkoutChoisiId(workoutsDuJour[0].id);
         } else {
             setWorkoutChoisiId(null);
         }
@@ -162,10 +161,6 @@ export default function StatsScreen() {
 
     function choisirJour(day: JourCalendrier) {
         setDateChoisie(day.dateString);
-    }
-
-    function choisirWorkout(id: string) {
-        setWorkoutChoisiId(id);
     }
 
     function definirJourSelectionneCommeAujourdhui() {
@@ -210,16 +205,7 @@ export default function StatsScreen() {
                     Ton activité réelle à partir des données utilisateur
                 </Text>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
+                <SectionCard ui={ui}>
                     <Text
                         style={{
                             color: ui.textPrimary,
@@ -237,76 +223,21 @@ export default function StatsScreen() {
                     </Text>
 
                     <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {totalWorkoutsAujourdhui}
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>Workouts</Text>
-                        </View>
-
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {totalExercicesAujourdhui}
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>Exercices</Text>
-                        </View>
+                        <StatCard label="Workouts" value={totalWorkoutsAujourdhui} ui={ui} />
+                        <StatCard label="Exercices" value={totalExercicesAujourdhui} ui={ui} />
                     </View>
 
                     <View style={{ flexDirection: "row", gap: 12 }}>
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {poidsActuel} kg
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>Poids actuel</Text>
-                        </View>
-
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {evolutionPoids > 0 ? `+${evolutionPoids}` : evolutionPoids} kg
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>Évolution</Text>
-                        </View>
+                        <StatCard label="Poids actuel" value={`${poidsActuel} kg`} ui={ui} />
+                        <StatCard
+                            label="Évolution"
+                            value={`${evolutionPoids > 0 ? "+" : ""}${evolutionPoids} kg`}
+                            ui={ui}
+                        />
                     </View>
-                </View>
+                </SectionCard>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
+                <SectionCard ui={ui}>
                     <Text
                         style={{
                             color: ui.textPrimary,
@@ -319,37 +250,8 @@ export default function StatsScreen() {
                     </Text>
 
                     <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {totalWorkoutsCompletes}
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
-                                Complétés
-                            </Text>
-                        </View>
-
-                        <View
-                            style={{
-                                flex: 1,
-                                backgroundColor: ui.cardSecondary,
-                                borderRadius: 16,
-                                padding: 16,
-                            }}
-                        >
-                            <Text style={{ color: ui.textPrimary, fontSize: 24, fontWeight: "800" }}>
-                                {dureeTotaleCompletee} min
-                            </Text>
-                            <Text style={{ color: ui.textMuted, marginTop: 4 }}>
-                                Temps total
-                            </Text>
-                        </View>
+                        <StatCard label="Complétés" value={totalWorkoutsCompletes} ui={ui} />
+                        <StatCard label="Temps total" value={`${dureeTotaleCompletee} min`} ui={ui} />
                     </View>
 
                     <TouchableOpacity
@@ -365,18 +267,9 @@ export default function StatsScreen() {
                             Vider les séances de test
                         </Text>
                     </TouchableOpacity>
-                </View>
+                </SectionCard>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 14,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
+                <SectionCard ui={ui}>
                     <Calendar
                         current={dateChoisie}
                         onDayPress={choisirJour}
@@ -400,18 +293,9 @@ export default function StatsScreen() {
                             borderRadius: 16,
                         }}
                     />
-                </View>
+                </SectionCard>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
+                <SectionCard ui={ui}>
                     <Text
                         style={{
                             color: ui.textPrimary,
@@ -455,18 +339,9 @@ export default function StatsScreen() {
                             Revenir au vrai aujourd’hui
                         </Text>
                     </TouchableOpacity>
-                </View>
+                </SectionCard>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
+                <SectionCard ui={ui} marginBottom={0}>
                     <Text
                         style={{
                             color: ui.textPrimary,
@@ -499,7 +374,7 @@ export default function StatsScreen() {
                             {workoutsDuJour.map((workout) => (
                                 <TouchableOpacity
                                     key={workout.id}
-                                    onPress={() => choisirWorkout(workout.id)}
+                                    onPress={() => setWorkoutChoisiId(workout.id)}
                                     style={{
                                         backgroundColor:
                                             workoutChoisiId === workout.id ? ui.accent : ui.cardSecondary,
@@ -510,7 +385,10 @@ export default function StatsScreen() {
                                 >
                                     <Text
                                         style={{
-                                            color: workoutChoisiId === workout.id ? ui.accentText : ui.textPrimary,
+                                            color:
+                                                workoutChoisiId === workout.id
+                                                    ? ui.accentText
+                                                    : ui.textPrimary,
                                             fontSize: 16,
                                             fontWeight: "700",
                                             marginBottom: 4,
@@ -522,7 +400,9 @@ export default function StatsScreen() {
                                     <Text
                                         style={{
                                             color:
-                                                workoutChoisiId === workout.id ? ui.selfSubtext : ui.textMuted,
+                                                workoutChoisiId === workout.id
+                                                    ? ui.selfSubtext
+                                                    : ui.textMuted,
                                             fontSize: 13,
                                         }}
                                     >
@@ -594,7 +474,7 @@ export default function StatsScreen() {
                             )}
                         </>
                     )}
-                </View>
+                </SectionCard>
             </ScrollView>
         </View>
     );

@@ -1,3 +1,5 @@
+//Cette classe est générée par IA
+
 import { useRef, useState } from "react";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Colors } from "@/constants/theme";
@@ -47,104 +49,63 @@ type UiColors = {
 };
 
 // ─────────────────────────────────────────────
-// Contenu des réponses
+// Contenu réponses
 // ─────────────────────────────────────────────
 
 const REPONSES_QUESTIONS: Record<NonNullable<ChoixQuestion>, string> = {
     "Comment perdre du gras":
-        "Pour perdre du gras :\n\n- mange un peu moins de calories\n- garde beaucoup de protéines\n- marche plus\n- fais de la musculation\n- reste constant plusieurs semaines\n\nLe plus important, ce n'est pas être parfait 2 jours. C'est être sérieux longtemps.",
+        "Pour perdre du gras :\n\n- mange un peu moins de calories\n- garde beaucoup de protéines\n- marche plus\n- fais de la musculation\n- reste constant plusieurs semaines",
     "Comment prendre du muscle":
-        "Pour prendre du muscle :\n\n- entraîne-toi avec progression\n- mange assez de protéines\n- dors bien\n- garde un léger surplus calorique\n- répète les mêmes exercices assez longtemps pour progresser\n\nSans progression à l'entraînement, tu limites beaucoup les résultats.",
+        "Pour prendre du muscle :\n\n- progression à l'entraînement\n- protéines suffisantes\n- bon sommeil\n- léger surplus calorique",
     "Comment rester motivé":
-        "La motivation monte et descend. Ce qu'il te faut surtout, c'est une routine.\n\n- fixe des jours précis\n- commence petit\n- note tes progrès\n- évite de négocier avec toi-même\n- pense long terme\n\nLa discipline bat la motivation.",
+        "La motivation monte et descend.\n\n- fixe des jours précis\n- note tes progrès\n- discipline > motivation",
 };
 
 const REPONSES_PLANIFICATIONS: Record<NonNullable<ChoixPlanification>, string> = {
     "Plan 3 jours":
-        "Plan 3 jours :\n\nJour 1 : Haut du corps\nJour 2 : Bas du corps\nJour 3 : Cardio + abdos\n\nC'est un bon choix pour débuter ou reprendre sérieusement.",
+        "Plan 3 jours :\n\nJour 1 : Haut du corps\nJour 2 : Bas du corps\nJour 3 : Cardio + abdos",
     "Plan 4 jours":
-        "Plan 4 jours :\n\nJour 1 : Push\nJour 2 : Pull\nJour 3 : Legs\nJour 4 : Cardio + core\n\nTrès bon équilibre entre progression et récupération.",
+        "Plan 4 jours :\n\nJour 1 : Push\nJour 2 : Pull\nJour 3 : Legs\nJour 4 : Cardio + core",
     "Plan 5 jours":
-        "Plan 5 jours :\n\nJour 1 : Pecs / triceps\nJour 2 : Dos / biceps\nJour 3 : Jambes\nJour 4 : Épaules / abdos\nJour 5 : Cardio ou rappel point faible\n\nC'est bien si tu es déjà régulier.",
+        "Plan 5 jours :\n\nJour 1 : Pecs / triceps\nJour 2 : Dos / biceps\nJour 3 : Jambes\nJour 4 : Épaules\nJour 5 : Cardio",
 };
 
 const INVITES_REGIME: Record<NonNullable<ChoixRegime>, string> = {
-    Cut: "Objectif cut choisi. Entre ton poids en kg et je vais te donner une estimation simple de calories et protéines.",
-    Maintien: "Objectif maintien choisi. Entre ton poids en kg et je vais te donner une estimation simple.",
-    Bulk: "Objectif bulk choisi. Entre ton poids en kg et je vais te donner une estimation simple.",
+    Cut: "Objectif cut choisi. Entre ton poids en kg.",
+    Maintien: "Objectif maintien choisi. Entre ton poids en kg.",
+    Bulk: "Objectif bulk choisi. Entre ton poids en kg.",
 };
 
 // ─────────────────────────────────────────────
-// Utilitaires
+// Calcul régime
 // ─────────────────────────────────────────────
 
-function calculerRegime(
-    poids: number,
-    regime: NonNullable<ChoixRegime>
-): { calories: number; proteines: number; conseil: string } {
+function calculerRegime(poids: number, regime: NonNullable<ChoixRegime>) {
     const maintien = poids * 33;
 
     const configs = {
-        Cut: {
-            calories: maintien - 400,
-            proteines: poids * 2.2,
-            conseil:
-                "Vise une perte progressive, garde beaucoup de protéines et évite de couper trop brutalement.",
-        },
-        Maintien: {
-            calories: maintien,
-            proteines: poids * 2,
-            conseil:
-                "Le maintien est utile pour stabiliser ton poids, mieux récupérer et progresser proprement.",
-        },
-        Bulk: {
-            calories: maintien + 300,
-            proteines: poids * 2,
-            conseil:
-                "Vise une prise de masse lente. Si tu montes trop vite, tu prendras surtout du gras.",
-        },
+        Cut: { calories: maintien - 400, proteines: poids * 2.2 },
+        Maintien: { calories: maintien, proteines: poids * 2 },
+        Bulk: { calories: maintien + 300, proteines: poids * 2 },
     };
 
-    const { calories, proteines, conseil } = configs[regime];
+    const { calories, proteines } = configs[regime];
 
     return {
         calories: Math.round(calories),
         proteines: Math.round(proteines),
-        conseil,
     };
 }
 
-function formaterResultatRegime(
-    poids: number,
-    regime: NonNullable<ChoixRegime>
-): string {
-    const maintien = Math.round(poids * 33);
-    const { calories, proteines, conseil } = calculerRegime(poids, regime);
-
-    return (
-        "Voici ton estimation 👇\n\n" +
-        `Poids : ${poids} kg\n` +
-        `Calories de maintien estimées : ${maintien} kcal\n` +
-        `Calories pour ton objectif : ${calories} kcal\n` +
-        `Protéines recommandées : ${proteines} g / jour\n\n` +
-        conseil
-    );
-}
-
 // ─────────────────────────────────────────────
-// Sous-composants
+// Sous composants
 // ─────────────────────────────────────────────
 
 function BulleMessage({ message, ui }: { message: Message; ui: UiColors }) {
     const estAssistant = message.auteur === "assistant";
 
     return (
-        <View
-            style={{
-                alignItems: estAssistant ? "flex-start" : "flex-end",
-                marginBottom: 12,
-            }}
-        >
+        <View style={{ alignItems: estAssistant ? "flex-start" : "flex-end", marginBottom: 12 }}>
             <View
                 style={{
                     backgroundColor: estAssistant ? ui.assistantBubble : ui.userBubble,
@@ -214,82 +175,13 @@ function BoutonChoix({
     );
 }
 
-function CarteChoix({
-                        children,
-                        ui,
-                    }: {
-    children: React.ReactNode;
-    ui: UiColors;
-}) {
-    return (
-        <View
-            style={{
-                backgroundColor: ui.cardBackground,
-                borderRadius: 20,
-                padding: 18,
-                borderWidth: 1,
-                borderColor: ui.border,
-                marginBottom: 16,
-            }}
-        >
-            {children}
-        </View>
-    );
-}
-
-function SaisiePoidsForm({
-                             valeur,
-                             onChange,
-                             onEnvoyer,
-                             ui,
-                         }: {
-    valeur: string;
-    onChange: (v: string) => void;
-    onEnvoyer: () => void;
-    ui: UiColors;
-}) {
-    return (
-        <View style={{ marginTop: 8 }}>
-            <TextInput
-                value={valeur}
-                onChangeText={onChange}
-                placeholder="Entre ton poids en kg"
-                placeholderTextColor={ui.textMuted}
-                keyboardType="numeric"
-                style={{
-                    backgroundColor: ui.inputBackground,
-                    color: ui.textPrimary,
-                    borderRadius: 16,
-                    padding: 16,
-                    marginBottom: 12,
-                    borderWidth: 1,
-                    borderColor: ui.border,
-                }}
-            />
-
-            <TouchableOpacity
-                onPress={onEnvoyer}
-                style={{
-                    backgroundColor: ui.accent,
-                    borderRadius: 16,
-                    padding: 16,
-                    alignItems: "center",
-                }}
-            >
-                <Text style={{ color: ui.accentText, fontWeight: "800" }}>
-                    Envoyer
-                </Text>
-            </TouchableOpacity>
-        </View>
-    );
-}
-
 // ─────────────────────────────────────────────
 // Composant principal
 // ─────────────────────────────────────────────
 
 export default function AssistantEcran() {
     const scrollRef = useRef<ScrollView | null>(null);
+
     const { theme } = useTheme();
     const colors = Colors[theme];
 
@@ -310,57 +202,49 @@ export default function AssistantEcran() {
         userText: "#070B14",
     };
 
-    // ── États ──────────────────────────────────
-
-    const [categorieChoisie, setCategorieChoisie] = useState<Categorie>(null);
-    const [choixQuestion, setChoixQuestion] = useState<ChoixQuestion>(null);
-    const [choixPlanification, setChoixPlanification] = useState<ChoixPlanification>(null);
-    const [choixRegime, setChoixRegime] = useState<ChoixRegime>(null);
-    const [texteEntree, setTexteEntree] = useState("");
-    const [demandePoids, setDemandePoids] = useState(false);
-
     const [messages, setMessages] = useState<Message[]>([
         {
-            id: "m1",
+            id: "1",
             auteur: "assistant",
             texte: "Bienvenue 👋 Qu'est-ce que je peux faire pour toi aujourd'hui ?",
         },
     ]);
 
-    // ── Actions ────────────────────────────────
+    const [categorieChoisie, setCategorieChoisie] = useState<Categorie>(null);
+    const [choixQuestion, setChoixQuestion] = useState<ChoixQuestion>(null);
+    const [choixPlanification, setChoixPlanification] =
+        useState<ChoixPlanification>(null);
+    const [choixRegime, setChoixRegime] = useState<ChoixRegime>(null);
+    const [texteEntree, setTexteEntree] = useState("");
+    const [demandePoids, setDemandePoids] = useState(false);
 
     function ajouterMessage(auteur: "assistant" | "user", texte: string) {
         setMessages((prev) => [
             ...prev,
-            {
-                id: Date.now().toString() + Math.random().toString(),
-                auteur,
-                texte,
-            },
+            { id: Date.now().toString(), auteur, texte },
         ]);
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    }
 
-    function resetChoixSecondaires() {
-        setChoixQuestion(null);
-        setChoixPlanification(null);
-        setChoixRegime(null);
-        setTexteEntree("");
-        setDemandePoids(false);
+        setTimeout(() => {
+            scrollRef.current?.scrollToEnd({ animated: true });
+        }, 50);
     }
 
     function choisirCategorie(categorie: Categorie) {
+        if (categorieChoisie === categorie) return;
+
         setCategorieChoisie(categorie);
-        resetChoixSecondaires();
+        setChoixQuestion(null);
+        setChoixPlanification(null);
+        setChoixRegime(null);
 
         if (!categorie) return;
 
         ajouterMessage("user", categorie);
 
-        const invites: Record<NonNullable<Categorie>, string> = {
-            Questions: "Choisis une question et je vais te répondre plus clairement.",
-            Planifications: "Choisis un plan et je vais te proposer une structure simple et efficace.",
-            Régime: "Choisis ton objectif alimentaire. Ensuite je te demanderai ton poids pour faire un petit calcul.",
+        const invites = {
+            Questions: "Choisis une question.",
+            Planifications: "Choisis un plan.",
+            Régime: "Choisis ton objectif alimentaire.",
         };
 
         ajouterMessage("assistant", invites[categorie]);
@@ -368,156 +252,154 @@ export default function AssistantEcran() {
 
     function choisirQuestion(question: ChoixQuestion) {
         if (!question) return;
+
         setChoixQuestion(question);
-        setTexteEntree("");
+
         ajouterMessage("user", question);
         ajouterMessage("assistant", REPONSES_QUESTIONS[question]);
     }
 
-    function choisirPlanification(plan: ChoixPlanification) {
+    function choisirPlan(plan: ChoixPlanification) {
         if (!plan) return;
+
         setChoixPlanification(plan);
-        setTexteEntree("");
+
         ajouterMessage("user", plan);
         ajouterMessage("assistant", REPONSES_PLANIFICATIONS[plan]);
     }
 
     function choisirRegime(regime: ChoixRegime) {
         if (!regime) return;
+
         setChoixRegime(regime);
-        setTexteEntree("");
-        setDemandePoids(false);
+
         ajouterMessage("user", regime);
         ajouterMessage("assistant", INVITES_REGIME[regime]);
+
         setDemandePoids(true);
     }
 
     function envoyerPoids() {
-        if (texteEntree.trim() === "" || !choixRegime) return;
-
-        ajouterMessage("user", texteEntree);
+        if (!choixRegime) return;
 
         const poids = parseFloat(texteEntree);
 
-        if (isNaN(poids) || poids < 30 || poids > 400) {
-            ajouterMessage("assistant", "Entre un poids valide en kg (entre 30 et 400).");
-            setTexteEntree("");
-            return;
-        }
+        if (isNaN(poids)) return;
 
-        ajouterMessage("assistant", formaterResultatRegime(poids, choixRegime));
+        ajouterMessage("user", texteEntree);
+
+        const { calories, proteines } = calculerRegime(poids, choixRegime);
+
+        ajouterMessage(
+            "assistant",
+            `Calories estimées : ${calories} kcal\nProtéines : ${proteines} g`
+        );
+
         setTexteEntree("");
         setDemandePoids(false);
     }
 
-    // ── Rendu ──────────────────────────────────
-
     return (
         <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
-            {/* En-tête */}
-            <View style={{ padding: 20, paddingTop: 30, paddingBottom: 10 }}>
+            <View style={{ padding: 20, paddingTop: 30 }}>
                 <Text
                     style={{
                         color: ui.textPrimary,
                         fontSize: 34,
                         fontWeight: "800",
-                        marginBottom: 8,
                     }}
                 >
                     Assistant
                 </Text>
 
-                <Text style={{ color: ui.textMuted, fontSize: 15 }}>
-                    Conseils, planifications et régime
+                <Text style={{ color: ui.textMuted }}>
+                    Conseils fitness et nutrition
                 </Text>
             </View>
 
-            {/* Conversation */}
             <ScrollView
                 ref={scrollRef}
                 style={{ flex: 1 }}
-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
-                onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+                contentContainerStyle={{ padding: 20 }}
             >
-                {messages.map((message) => (
-                    <BulleMessage key={message.id} message={message} ui={ui} />
+                {messages.map((m) => (
+                    <BulleMessage key={m.id} message={m} ui={ui} />
                 ))}
 
-                {/* Catégories */}
-                <CarteChoix ui={ui}>
-                    {(["Questions", "Planifications", "Régime"] as NonNullable<Categorie>[]).map(
-                        (categorie) => (
-                            <BoutonChoix
-                                key={categorie}
-                                label={categorie}
-                                actif={categorieChoisie === categorie}
-                                onPress={() => choisirCategorie(categorie)}
-                                ui={ui}
-                            />
-                        )
-                    )}
-                </CarteChoix>
+                <BoutonChoix
+                    label="Questions"
+                    actif={categorieChoisie === "Questions"}
+                    onPress={() => choisirCategorie("Questions")}
+                    ui={ui}
+                />
 
-                {/* Questions */}
+                <BoutonChoix
+                    label="Planifications"
+                    actif={categorieChoisie === "Planifications"}
+                    onPress={() => choisirCategorie("Planifications")}
+                    ui={ui}
+                />
+
+                <BoutonChoix
+                    label="Régime"
+                    actif={categorieChoisie === "Régime"}
+                    onPress={() => choisirCategorie("Régime")}
+                    ui={ui}
+                />
+
                 {categorieChoisie === "Questions" && (
-                    <CarteChoix ui={ui}>
-                        {(
-                            [
-                                "Comment perdre du gras",
-                                "Comment prendre du muscle",
-                                "Comment rester motivé",
-                            ] as NonNullable<ChoixQuestion>[]
-                        ).map((question) => (
-                            <BoutonChoix
-                                key={question}
-                                label={question}
-                                actif={choixQuestion === question}
-                                onPress={() => choisirQuestion(question)}
-                                ui={ui}
-                            />
-                        ))}
-                    </CarteChoix>
+                    <>
+                        <BoutonChoix
+                            label="Comment perdre du gras"
+                            actif={false}
+                            onPress={() =>
+                                choisirQuestion("Comment perdre du gras")
+                            }
+                            ui={ui}
+                        />
+
+                        <BoutonChoix
+                            label="Comment prendre du muscle"
+                            actif={false}
+                            onPress={() =>
+                                choisirQuestion("Comment prendre du muscle")
+                            }
+                            ui={ui}
+                        />
+                    </>
                 )}
 
-                {/* Planifications */}
-                {categorieChoisie === "Planifications" && (
-                    <CarteChoix ui={ui}>
-                        {(["Plan 3 jours", "Plan 4 jours", "Plan 5 jours"] as NonNullable<ChoixPlanification>[]).map(
-                            (plan) => (
-                                <BoutonChoix
-                                    key={plan}
-                                    label={plan}
-                                    actif={choixPlanification === plan}
-                                    onPress={() => choisirPlanification(plan)}
-                                    ui={ui}
-                                />
-                            )
-                        )}
-                    </CarteChoix>
-                )}
+                {categorieChoisie === "Régime" && demandePoids && (
+                    <>
+                        <TextInput
+                            value={texteEntree}
+                            onChangeText={setTexteEntree}
+                            placeholder="Entre ton poids"
+                            style={{
+                                backgroundColor: ui.inputBackground,
+                                padding: 16,
+                                borderRadius: 16,
+                                marginTop: 10,
+                                marginBottom: 10,
+                                borderWidth: 1,
+                                borderColor: ui.border,
+                            }}
+                        />
 
-                {/* Régime */}
-                {categorieChoisie === "Régime" && (
-                    <CarteChoix ui={ui}>
-                        {(["Cut", "Maintien", "Bulk"] as NonNullable<ChoixRegime>[]).map((regime) => (
-                            <BoutonChoix
-                                key={regime}
-                                label={regime}
-                                actif={choixRegime === regime}
-                                onPress={() => choisirRegime(regime)}
-                                ui={ui}
-                            />
-                        ))}
-
-                        {demandePoids && (
-                            <SaisiePoidsForm
-                                valeur={texteEntree}
-                                onChange={setTexteEntree}
-                                onEnvoyer={envoyerPoids}
-                                ui={ui}
-                            />
-                        )}
-                    </CarteChoix>
+                        <TouchableOpacity
+                            onPress={envoyerPoids}
+                            style={{
+                                backgroundColor: ui.accent,
+                                padding: 16,
+                                borderRadius: 16,
+                                alignItems: "center",
+                            }}
+                        >
+                            <Text style={{ color: ui.accentText, fontWeight: "700" }}>
+                                Envoyer
+                            </Text>
+                        </TouchableOpacity>
+                    </>
                 )}
             </ScrollView>
         </View>

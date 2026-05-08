@@ -1,11 +1,13 @@
+//Cette classe est générée par IA
+
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { mockWorkouts } from "@/data/mockData";
-import { getSessionWorkouts, subscribeSessionWorkouts } from "@/data/workoutSession";
-import { getEffectiveToday, subscribeTodayOverride } from "@/data/testToday";
-import { Workout } from "@/types/models";
 import { Colors } from "@/constants/theme";
 import { useTheme } from "@/context/context";
+import { mockWorkouts } from "@/data/mockData";
+import { getEffectiveToday, subscribeTodayOverride } from "@/data/testToday";
+import { getSessionWorkouts, subscribeSessionWorkouts } from "@/data/workoutSession";
+import { Workout } from "@/types/models";
 
 type RangType = "Bronze" | "Argent" | "Or" | "Diamant";
 
@@ -83,34 +85,94 @@ const publicationsAmisInitiales: Publication[] = [
 ];
 
 function couleurRang(rang: RangType) {
-    if (rang === "Bronze") {
-        return "#B87333";
-    }
-    if (rang === "Argent") {
-        return "#C0C0C0";
-    }
-    if (rang === "Or") {
-        return "#FFD700";
-    }
+    if (rang === "Bronze") return "#B87333";
+    if (rang === "Argent") return "#C0C0C0";
+    if (rang === "Or") return "#FFD700";
     return "#7DD3FC";
 }
 
 function calculerRang(points: number): RangType {
-    if (points >= 20) {
-        return "Diamant";
-    }
-    if (points >= 12) {
-        return "Or";
-    }
-    if (points >= 7) {
-        return "Argent";
-    }
+    if (points >= 20) return "Diamant";
+    if (points >= 12) return "Or";
+    if (points >= 7) return "Argent";
     return "Bronze";
 }
 
 function formaterTemps(date: string) {
-    const objet = new Date(date);
-    return objet.toLocaleDateString();
+    return new Date(date).toLocaleDateString();
+}
+
+function SectionCard({
+                         ui,
+                         title,
+                         children,
+                     }: {
+    ui: any;
+    title: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <View
+            style={{
+                backgroundColor: ui.cardBackground,
+                borderRadius: 20,
+                padding: 18,
+                borderWidth: 1,
+                borderColor: ui.border,
+                marginBottom: 20,
+            }}
+        >
+            <Text
+                style={{
+                    color: ui.textPrimary,
+                    fontSize: 18,
+                    fontWeight: "700",
+                    marginBottom: 14,
+                }}
+            >
+                {title}
+            </Text>
+
+            {children}
+        </View>
+    );
+}
+
+function ActionButton({
+                          ui,
+                          label,
+                          onPress,
+                          active = false,
+                      }: {
+    ui: any;
+    label: string;
+    onPress: () => void;
+    active?: boolean;
+}) {
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            style={{
+                backgroundColor: active ? ui.accent : ui.cardTertiary,
+                borderRadius: 14,
+                padding: 14,
+                alignItems: "center",
+            }}
+        >
+            <Text
+                style={{
+                    color: active ? ui.accentText : ui.textPrimary,
+                    fontWeight: "700",
+                }}
+            >
+                {label}
+            </Text>
+        </TouchableOpacity>
+    );
+}
+
+function EmptyText({ ui, text }: { ui: any; text: string }) {
+    return <Text style={{ color: ui.textMuted, fontSize: 15 }}>{text}</Text>;
 }
 
 export default function SocialScreen() {
@@ -121,7 +183,6 @@ export default function SocialScreen() {
         screenBackground: colors.background,
         textPrimary: colors.text,
         textMuted: theme === "dark" ? "#7C8799" : "#6B7280",
-        textSecondary: theme === "dark" ? "#93A1B5" : "#5F6B7A",
         cardBackground: theme === "dark" ? "#0D1524" : "#F4F7FB",
         cardSecondary: theme === "dark" ? "#121C2D" : "#E9EEF5",
         cardTertiary: theme === "dark" ? "#182335" : "#DCE6F5",
@@ -131,17 +192,17 @@ export default function SocialScreen() {
         selfSubtext: theme === "dark" ? "#0B2F2B" : "#0B5F58",
     };
 
-    const [today, setToday] = useState<string>(getEffectiveToday());
+    const [today, setToday] = useState(getEffectiveToday());
     const [sessionWorkouts, setSessionWorkouts] = useState<Workout[]>(getSessionWorkouts());
 
-    const [publicationsAmis, setPublicationsAmis] = useState<Publication[]>(publicationsAmisInitiales);
+    const [publicationsAmis, setPublicationsAmis] = useState(publicationsAmisInitiales);
     const [publicationsPerso, setPublicationsPerso] = useState<Publication[]>([]);
     const [compteurPublication, setCompteurPublication] = useState(1);
 
-    const [likesMis, setLikesMis] = useState<{ [id: string]: boolean }>({});
-    const [commentairesVisibles, setCommentairesVisibles] = useState<{ [id: string]: boolean }>({});
-    const [reactionsPerso, setReactionsPerso] = useState<{ [id: string]: string | null }>({});
-    const [commentairesAjoutes, setCommentairesAjoutes] = useState<{ [id: string]: Commentaire[] }>({});
+    const [likesMis, setLikesMis] = useState<Record<string, boolean>>({});
+    const [commentairesVisibles, setCommentairesVisibles] = useState<Record<string, boolean>>({});
+    const [reactionsPerso, setReactionsPerso] = useState<Record<string, string | null>>({});
+    const [commentairesAjoutes, setCommentairesAjoutes] = useState<Record<string, Commentaire[]>>({});
 
     useEffect(() => {
         const unsubscribeWorkouts = subscribeSessionWorkouts(() => {
@@ -158,38 +219,26 @@ export default function SocialScreen() {
         };
     }, []);
 
-    const tousLesWorkouts = useMemo(() => {
-        return [...sessionWorkouts, ...mockWorkouts];
-    }, [sessionWorkouts]);
-
     const workoutsPerso = useMemo(() => {
-        return tousLesWorkouts
+        return [...sessionWorkouts, ...mockWorkouts]
             .filter((workout) => workout.completed)
             .sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
-    }, [tousLesWorkouts]);
+    }, [sessionWorkouts]);
 
     const classement = useMemo(() => {
-        const mesPoints = workoutsPerso.length;
-
-        const joueurs = joueursBase.map((joueur) => {
-            if (joueur.nom === "Toi") {
-                return {
-                    ...joueur,
-                    points: mesPoints,
-                };
-            }
-            return joueur;
-        });
-
-        return [...joueurs].sort((a, b) => b.points - a.points);
+        return joueursBase
+            .map((joueur) =>
+                joueur.nom === "Toi"
+                    ? { ...joueur, points: workoutsPerso.length }
+                    : joueur
+            )
+            .sort((a, b) => b.points - a.points);
     }, [workoutsPerso]);
 
     const maPublicationDuJour = useMemo(() => {
         const workoutDuJour = workoutsPerso.find((workout) => workout.date === today);
 
-        if (!workoutDuJour) {
-            return null;
-        }
+        if (!workoutDuJour) return null;
 
         return {
             id: `jour-${workoutDuJour.id}`,
@@ -215,6 +264,28 @@ export default function SocialScreen() {
         return [...publicationsPerso, ...publicationsAmis];
     }, [publicationsPerso, publicationsAmis]);
 
+    function modifierLikes(
+        id: string,
+        source: "moi" | "ami" | "perso",
+        dejaLike: boolean
+    ) {
+        if (source === "ami") {
+            setPublicationsAmis((items) =>
+                items.map((p) =>
+                    p.id === id ? { ...p, likes: dejaLike ? p.likes - 1 : p.likes + 1 } : p
+                )
+            );
+        }
+
+        if (source === "perso") {
+            setPublicationsPerso((items) =>
+                items.map((p) =>
+                    p.id === id ? { ...p, likes: dejaLike ? p.likes - 1 : p.likes + 1 } : p
+                )
+            );
+        }
+    }
+
     function likerPublication(id: string, source: "moi" | "ami" | "perso") {
         const dejaLike = likesMis[id] === true;
 
@@ -223,35 +294,7 @@ export default function SocialScreen() {
             [id]: !dejaLike,
         }));
 
-        if (source === "ami") {
-            setPublicationsAmis((anciennes) =>
-                anciennes.map((publication) => {
-                    if (publication.id !== id) {
-                        return publication;
-                    }
-
-                    return {
-                        ...publication,
-                        likes: dejaLike ? publication.likes - 1 : publication.likes + 1,
-                    };
-                })
-            );
-        }
-
-        if (source === "perso") {
-            setPublicationsPerso((anciennes) =>
-                anciennes.map((publication) => {
-                    if (publication.id !== id) {
-                        return publication;
-                    }
-
-                    return {
-                        ...publication,
-                        likes: dejaLike ? publication.likes - 1 : publication.likes + 1,
-                    };
-                })
-            );
-        }
+        modifierLikes(id, source, dejaLike);
     }
 
     function basculerCommentaires(id: string) {
@@ -269,7 +312,7 @@ export default function SocialScreen() {
     }
 
     function ajouterCommentaireRapide(id: string) {
-        const nouveauCommentaire: Commentaire = {
+        const nouveauCommentaire = {
             id: `new-${Date.now()}`,
             auteur: "Toi",
             texte: "Bravo 👏",
@@ -288,13 +331,10 @@ export default function SocialScreen() {
 
     function publierDerniereSeance() {
         const dernierWorkout = workoutsPerso[0];
-
-        if (!dernierWorkout) {
-            return;
-        }
+        if (!dernierWorkout) return;
 
         const nouvellePublication: Publication = {
-            id: "m" + compteurPublication,
+            id: `m${compteurPublication}`,
             auteur: "Toi",
             temps: "À l’instant",
             titre: dernierWorkout.title,
@@ -321,6 +361,7 @@ export default function SocialScreen() {
         source: "moi" | "ami" | "perso";
     }) {
         const commentaires = afficherCommentaires(publication);
+        const liked = likesMis[publication.id] === true;
 
         return (
             <View
@@ -346,66 +387,33 @@ export default function SocialScreen() {
                     {publication.temps}
                 </Text>
 
-                <Text
-                    style={{
-                        color: ui.textPrimary,
-                        fontSize: 15,
-                        marginBottom: 12,
-                    }}
-                >
+                <Text style={{ color: ui.textPrimary, fontSize: 15, marginBottom: 12 }}>
                     {publication.description}
                 </Text>
 
-                <TouchableOpacity
+                <ActionButton
+                    ui={ui}
+                    label={`👍 Like : ${publication.likes}`}
+                    active={liked}
                     onPress={() => likerPublication(publication.id, source)}
-                    style={{
-                        backgroundColor: likesMis[publication.id] ? ui.accent : ui.cardTertiary,
-                        borderRadius: 14,
-                        padding: 14,
-                        alignItems: "center",
-                        marginBottom: 10,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: likesMis[publication.id] ? ui.accentText : ui.textPrimary,
-                            fontWeight: "700",
-                        }}
-                    >
-                        👍 Like : {publication.likes}
-                    </Text>
-                </TouchableOpacity>
+                />
 
-                <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
-                    <TouchableOpacity
-                        onPress={() => basculerCommentaires(publication.id)}
-                        style={{
-                            flex: 1,
-                            backgroundColor: ui.cardTertiary,
-                            borderRadius: 14,
-                            padding: 14,
-                            alignItems: "center",
-                        }}
-                    >
-                        <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
-                            💬 Voir commentaires
-                        </Text>
-                    </TouchableOpacity>
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 10, marginBottom: 10 }}>
+                    <View style={{ flex: 1 }}>
+                        <ActionButton
+                            ui={ui}
+                            label="💬 Commentaires"
+                            onPress={() => basculerCommentaires(publication.id)}
+                        />
+                    </View>
 
-                    <TouchableOpacity
-                        onPress={() => ajouterCommentaireRapide(publication.id)}
-                        style={{
-                            flex: 1,
-                            backgroundColor: ui.cardTertiary,
-                            borderRadius: 14,
-                            padding: 14,
-                            alignItems: "center",
-                        }}
-                    >
-                        <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
-                            Ajouter bravo
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <ActionButton
+                            ui={ui}
+                            label="Bravo 👏"
+                            onPress={() => ajouterCommentaireRapide(publication.id)}
+                        />
+                    </View>
                 </View>
 
                 <View style={{ flexDirection: "row", marginBottom: 12 }}>
@@ -465,9 +473,7 @@ export default function SocialScreen() {
                         </Text>
 
                         {commentaires.length === 0 && (
-                            <Text style={{ color: ui.textMuted }}>
-                                Aucun commentaire
-                            </Text>
+                            <Text style={{ color: ui.textMuted }}>Aucun commentaire</Text>
                         )}
 
                         {commentaires.map((commentaire) => (
@@ -495,7 +501,11 @@ export default function SocialScreen() {
         <View style={{ flex: 1, backgroundColor: ui.screenBackground }}>
             <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{ padding: 20, paddingTop: 30, paddingBottom: 140 }}
+                contentContainerStyle={{
+                    padding: 20,
+                    paddingTop: 30,
+                    paddingBottom: 140,
+                }}
             >
                 <Text
                     style={{
@@ -508,46 +518,20 @@ export default function SocialScreen() {
                     Social
                 </Text>
 
-                <Text
-                    style={{
-                        color: ui.textMuted,
-                        fontSize: 15,
-                        marginBottom: 18,
-                    }}
-                >
+                <Text style={{ color: ui.textMuted, fontSize: 15, marginBottom: 18 }}>
                     Classement, activité et publications
                 </Text>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 14,
-                        }}
-                    >
-                        Classement
-                    </Text>
-
+                <SectionCard ui={ui} title="Classement">
                     {classement.map((joueur, index) => {
                         const rang = calculerRang(joueur.points);
+                        const estMoi = joueur.nom === "Toi";
 
                         return (
                             <View
                                 key={joueur.id}
                                 style={{
-                                    backgroundColor:
-                                        joueur.nom === "Toi" ? ui.accent : ui.cardSecondary,
+                                    backgroundColor: estMoi ? ui.accent : ui.cardSecondary,
                                     borderRadius: 16,
                                     padding: 16,
                                     marginBottom: 10,
@@ -559,10 +543,7 @@ export default function SocialScreen() {
                                 <View>
                                     <Text
                                         style={{
-                                            color:
-                                                joueur.nom === "Toi"
-                                                    ? ui.accentText
-                                                    : ui.textPrimary,
+                                            color: estMoi ? ui.accentText : ui.textPrimary,
                                             fontSize: 16,
                                             fontWeight: "700",
                                         }}
@@ -572,10 +553,7 @@ export default function SocialScreen() {
 
                                     <Text
                                         style={{
-                                            color:
-                                                joueur.nom === "Toi"
-                                                    ? ui.selfSubtext
-                                                    : ui.textMuted,
+                                            color: estMoi ? ui.selfSubtext : ui.textMuted,
                                             marginTop: 4,
                                         }}
                                     >
@@ -585,10 +563,7 @@ export default function SocialScreen() {
 
                                 <Text
                                     style={{
-                                        color:
-                                            joueur.nom === "Toi"
-                                                ? ui.accentText
-                                                : couleurRang(rang),
+                                        color: estMoi ? ui.accentText : couleurRang(rang),
                                         fontSize: 15,
                                         fontWeight: "800",
                                     }}
@@ -598,61 +573,17 @@ export default function SocialScreen() {
                             </View>
                         );
                     })}
-                </View>
+                </SectionCard>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 14,
-                        }}
-                    >
-                        Ce que j’ai fait aujourd’hui
-                    </Text>
-
-                    {!maPublicationDuJour && (
-                        <Text style={{ color: ui.textMuted, fontSize: 15 }}>
-                            Aucune séance enregistrée aujourd’hui.
-                        </Text>
-                    )}
-
-                    {maPublicationDuJour && (
+                <SectionCard ui={ui} title="Ce que j’ai fait aujourd’hui">
+                    {!maPublicationDuJour ? (
+                        <EmptyText ui={ui} text="Aucune séance enregistrée aujourd’hui." />
+                    ) : (
                         <CardPublication publication={maPublicationDuJour} source="moi" />
                     )}
-                </View>
+                </SectionCard>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 14,
-                        }}
-                    >
-                        Ce que mes amis ont fait aujourd’hui
-                    </Text>
-
+                <SectionCard ui={ui} title="Ce que mes amis ont fait aujourd’hui">
                     {publicationsAmis.map((publication) => (
                         <CardPublication
                             key={publication.id}
@@ -660,29 +591,9 @@ export default function SocialScreen() {
                             source="ami"
                         />
                     ))}
-                </View>
+                </SectionCard>
 
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                        marginBottom: 20,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 14,
-                        }}
-                    >
-                        Mes publications
-                    </Text>
-
+                <SectionCard ui={ui} title="Mes publications">
                     <TouchableOpacity
                         onPress={publierDerniereSeance}
                         style={{
@@ -704,108 +615,55 @@ export default function SocialScreen() {
                         </Text>
                     </TouchableOpacity>
 
-                    {publicationsPerso.length === 0 && (
-                        <Text style={{ color: ui.textMuted, fontSize: 15 }}>
-                            Tu n’as pas encore publié de séance.
-                        </Text>
+                    {publicationsPerso.length === 0 ? (
+                        <EmptyText ui={ui} text="Tu n’as pas encore publié de séance." />
+                    ) : (
+                        publicationsPerso.map((publication) => (
+                            <CardPublication
+                                key={publication.id}
+                                publication={publication}
+                                source="perso"
+                            />
+                        ))
                     )}
+                </SectionCard>
 
-                    {publicationsPerso.map((publication) => (
-                        <CardPublication
-                            key={publication.id}
-                            publication={publication}
-                            source="perso"
-                        />
-                    ))}
-                </View>
-
-                <View
-                    style={{
-                        backgroundColor: ui.cardBackground,
-                        borderRadius: 20,
-                        padding: 18,
-                        borderWidth: 1,
-                        borderColor: ui.border,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: ui.textPrimary,
-                            fontSize: 18,
-                            fontWeight: "700",
-                            marginBottom: 14,
-                        }}
-                    >
-                        Résumé rapide
-                    </Text>
-
-                    <View
-                        style={{
-                            backgroundColor: ui.cardSecondary,
-                            borderRadius: 16,
-                            padding: 16,
-                            marginBottom: 10,
-                        }}
-                    >
-                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
-                            Total de tes séances
-                        </Text>
-                        <Text
-                            style={{
-                                color: ui.textPrimary,
-                                fontSize: 22,
-                                fontWeight: "800",
-                            }}
-                        >
-                            {workoutsPerso.length}
-                        </Text>
-                    </View>
-
-                    <View
-                        style={{
-                            backgroundColor: ui.cardSecondary,
-                            borderRadius: 16,
-                            padding: 16,
-                            marginBottom: 10,
-                        }}
-                    >
-                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
-                            Dernière séance
-                        </Text>
-                        <Text
-                            style={{
-                                color: ui.textPrimary,
-                                fontSize: 16,
-                                fontWeight: "700",
-                            }}
-                        >
-                            {workoutsPerso[0]
+                <SectionCard ui={ui} title="Résumé rapide">
+                    {[
+                        ["Total de tes séances", workoutsPerso.length],
+                        [
+                            "Dernière séance",
+                            workoutsPerso[0]
                                 ? `${workoutsPerso[0].title} • ${formaterTemps(workoutsPerso[0].date)}`
-                                : "Aucune"}
-                        </Text>
-                    </View>
-
-                    <View
-                        style={{
-                            backgroundColor: ui.cardSecondary,
-                            borderRadius: 16,
-                            padding: 16,
-                        }}
-                    >
-                        <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
-                            Feed total
-                        </Text>
-                        <Text
+                                : "Aucune",
+                        ],
+                        ["Feed total", feedComplet.length],
+                    ].map(([label, value]) => (
+                        <View
+                            key={String(label)}
                             style={{
-                                color: ui.textPrimary,
-                                fontSize: 22,
-                                fontWeight: "800",
+                                backgroundColor: ui.cardSecondary,
+                                borderRadius: 16,
+                                padding: 16,
+                                marginBottom: 10,
                             }}
                         >
-                            {feedComplet.length}
-                        </Text>
-                    </View>
-                </View>
+                            <Text style={{ color: ui.textMuted, marginBottom: 6 }}>
+                                {label}
+                            </Text>
+
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontSize: typeof value === "number" ? 22 : 16,
+                                    fontWeight: "800",
+                                }}
+                            >
+                                {value}
+                            </Text>
+                        </View>
+                    ))}
+                </SectionCard>
             </ScrollView>
         </View>
     );

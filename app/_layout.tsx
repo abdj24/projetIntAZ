@@ -1,9 +1,16 @@
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from "@react-navigation/native";
+//Généré par IA
+
+import {
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider as NavigationThemeProvider,
+} from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { ThemeProvider, useTheme } from "@/context/context";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 export const unstable_settings = {
     anchor: "(tabs)",
@@ -11,12 +18,18 @@ export const unstable_settings = {
 
 function AppNavigator() {
     const { theme } = useTheme();
+    const { user, loading } = useAuth();
+
+    if (loading) return null;
 
     return (
         <NavigationThemeProvider value={theme === "dark" ? DarkTheme : DefaultTheme}>
             <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+                {!user ? (
+                    <Stack.Screen name="login" options={{ headerShown: false }} />
+                ) : (
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                )}
             </Stack>
             <StatusBar style={theme === "dark" ? "light" : "dark"} />
         </NavigationThemeProvider>
@@ -26,7 +39,9 @@ function AppNavigator() {
 export default function RootLayout() {
     return (
         <ThemeProvider>
-            <AppNavigator />
+            <AuthProvider>
+                <AppNavigator />
+            </AuthProvider>
         </ThemeProvider>
     );
 }

@@ -1,3 +1,5 @@
+//Cette classe est générée par IA
+
 import React, { useMemo, useState } from "react";
 import {Linking, Platform, ScrollView, Text, TouchableOpacity, View, useColorScheme,} from "react-native";
 import { Colors } from "@/constants/theme";
