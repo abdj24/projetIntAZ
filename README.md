@@ -59,13 +59,7 @@ Le projet utilise une seule base de donnees: `test`. Dans l'URL MongoDB Atlas, l
 
 ## Lancer l'application
 
-Pour lancer le backend et le frontend en meme temps :
-
-```bash
-npm start
-```
-
-Sur Windows, si `npm start` ne marche pas :
+Pour lancer l'application exécutez dans le terminal :
 
 ```bash
 npm.cmd start
