@@ -7,6 +7,7 @@ const friendController = require("../controllers/friendController");
 
 // Routes pour consulter et chercher des amis.
 router.get("/", authMiddleware, friendController.getFriends);
+router.get("/ranking", authMiddleware, friendController.getRanking);
 router.get("/search", authMiddleware, friendController.searchUsers);
 
 // Routes pour les demandes d'amis.

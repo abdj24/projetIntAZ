@@ -68,6 +68,13 @@ export type FriendRequestsResponse = {
     outgoing: FriendRequest[];
 };
 
+export type FriendRankingItem = {
+    id: string;
+    nom: string;
+    points: number;
+    estMoi?: boolean;
+};
+
 /**
  * Lit la reponse JSON et lance une erreur claire si l'API refuse la requete.
  */
@@ -218,6 +225,16 @@ function normalizeFriendRequest(request: any): FriendRequest {
         requester: normalizeFriendUser(request.requester),
         recipient: normalizeFriendUser(request.recipient),
         createdAt: request.createdAt,
+    };
+}
+
+// Normalisation d'une ligne du classement social.
+function normalizeFriendRankingItem(item: any): FriendRankingItem {
+    return {
+        id: String(item.id || item._id),
+        nom: item.nom,
+        points: Number(item.points || 0),
+        estMoi: Boolean(item.estMoi),
     };
 }
 
@@ -435,6 +452,17 @@ export async function getFriends(token: string) {
 
     const data = await readJson(response);
     return Array.isArray(data) ? data.map(normalizeFriendUser) : [];
+}
+
+export async function getFriendRanking(token: string) {
+    const response = await apiFetch(`${API_URL}/friends/ranking`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await readJson(response);
+    return Array.isArray(data) ? data.map(normalizeFriendRankingItem) : [];
 }
 
 /**

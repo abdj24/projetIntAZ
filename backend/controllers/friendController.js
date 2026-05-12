@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 
 const FriendRequest = require("../models/FriendRequest");
 const User = require("../models/User");
+const Workout = require("../models/Workout");
 
 const userFields = "name username email friends";
 
@@ -93,6 +94,59 @@ exports.getFriends = async (req, res) => {
     } catch (error) {
         console.error("Erreur récupération amis:", error);
         res.status(500).json({ message: "Erreur récupération amis" });
+    }
+};
+
+/**
+ * Retourne le classement de l'utilisateur et de ses amis selon les workouts completes.
+ */
+exports.getRanking = async (req, res) => {
+    try {
+        // Chargement de l'utilisateur connecte et de ses amis.
+        const currentUser = await User.findById(req.userId)
+            .select(userFields)
+            .populate("friends", userFields);
+
+        if (!currentUser) {
+            return res.status(404).json({ message: "Utilisateur introuvable" });
+        }
+
+        const rankingUsers = [currentUser, ...(currentUser.friends || [])];
+        const userIds = rankingUsers.map((user) => user._id);
+
+        // Comptage des workouts completes par utilisateur directement dans MongoDB.
+        const workoutCounts = await Workout.aggregate([
+            {
+                $match: {
+                    userId: { $in: userIds },
+                    completed: true,
+                },
+            },
+            {
+                $group: {
+                    _id: "$userId",
+                    points: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const pointsByUser = new Map(
+            workoutCounts.map((item) => [String(item._id), item.points])
+        );
+
+        const ranking = rankingUsers
+            .map((user) => ({
+                id: String(user._id),
+                nom: user.username || user.name,
+                points: pointsByUser.get(String(user._id)) || 0,
+                estMoi: String(user._id) === String(req.userId),
+            }))
+            .sort((a, b) => b.points - a.points || a.nom.localeCompare(b.nom));
+
+        res.json(ranking);
+    } catch (error) {
+        console.error("Erreur classement amis:", error);
+        res.status(500).json({ message: "Erreur classement amis" });
     }
 };
 

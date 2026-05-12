@@ -2,38 +2,18 @@
 
 import { useCallback, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-    ActivityIndicator,
-    Modal,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import {ActivityIndicator, Modal, ScrollView, Text, TextInput, TouchableOpacity, View,} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Colors } from "@/constants/theme";
 import { useTheme } from "@/context/context";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkouts } from "@/context/WorkoutContext";
 import { toLocalDateString } from "@/components/utils/dateUtils";
-import {
-    addPublicationComment,
-    ApiPublication,
-    createPublication,
-    FriendRequest,
-    FriendUser,
-    getFriendRequests,
-    getFriends,
-    getPublications,
-    respondFriendRequest,
-    searchUsers,
-    sendFriendRequest,
-    setPublicationReaction,
-    togglePublicationLike,
-} from "@/services/api";
+import {addPublicationComment, ApiPublication, createPublication, FriendRequest, FriendRankingItem, FriendUser,
+    getFriendRequests, getFriends, getFriendRanking, getPublications, respondFriendRequest, searchUsers,
+    sendFriendRequest, setPublicationReaction, togglePublicationLike,} from "@/services/api";
 
-type RangType = "Bronze" | "Argent" | "Or" | "Diamant";
+type RangType = "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond";
 
 type UiColors = {
     screenBackground: string;
@@ -51,15 +31,17 @@ type UiColors = {
 
 function couleurRang(rang: RangType) {
     if (rang === "Bronze") return "#B87333";
-    if (rang === "Argent") return "#C0C0C0";
-    if (rang === "Or") return "#FFD700";
+    if (rang === "Silver") return "#C0C0C0";
+    if (rang === "Gold") return "#FFD700";
+    if (rang === "Platinum") return "#A7F3D0";
     return "#7DD3FC";
 }
 
 function calculerRang(points: number): RangType {
-    if (points >= 20) return "Diamant";
-    if (points >= 12) return "Or";
-    if (points >= 7) return "Argent";
+    if (points >= 20) return "Diamond";
+    if (points >= 12) return "Platinum";
+    if (points >= 7) return "Gold";
+    if (points >= 3) return "Silver";
     return "Bronze";
 }
 
@@ -188,6 +170,7 @@ export default function SocialScreen() {
     // Initialisation des variables de l'ecran social.
     const [publications, setPublications] = useState<ApiPublication[]>([]);
     const [friends, setFriends] = useState<FriendUser[]>([]);
+    const [ranking, setRanking] = useState<FriendRankingItem[]>([]);
     const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
     const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
     const [friendsVisible, setFriendsVisible] = useState(false);
@@ -224,16 +207,18 @@ export default function SocialScreen() {
             setLoadingSocial(true);
             setPublicationStatus("");
             setFriendStatus("");
-            const [publicationsData, friendsData, requestsData] = await Promise.all([
+            const [publicationsData, friendsData, requestsData, rankingData] = await Promise.all([
                 getPublications(currentToken),
                 getFriends(currentToken),
                 getFriendRequests(currentToken),
+                getFriendRanking(currentToken),
             ]);
 
             setPublications(publicationsData);
             setFriends(friendsData);
             setIncomingRequests(requestsData.incoming);
             setOutgoingRequests(requestsData.outgoing);
+            setRanking(rankingData);
         } catch (e: any) {
             setPublicationStatus(e.message || "Erreur chargement social");
         } finally {
@@ -262,33 +247,19 @@ export default function SocialScreen() {
         [publications]
     );
 
-    const publicationsAmis = useMemo(
-        () => publications.filter((publication) => !publication.estMoi),
-        [publications]
-    );
-
-    // Calcul du classement a partir des seances et publications visibles.
+    // Calcul du classement a partir des vrais workouts completes dans MongoDB.
     const classement = useMemo(() => {
-        const pointsParAuteur = new Map<string, { id: string; nom: string; points: number }>();
+        if (ranking.length > 0) return ranking;
 
-        pointsParAuteur.set(user?.id || "me", {
-            id: user?.id || "me",
-            nom: displayName,
-            points: workoutsPerso.length,
-        });
-
-        publicationsAmis.forEach((publication) => {
-            const id = publication.userId || publication.auteur;
-            const current = pointsParAuteur.get(id);
-            pointsParAuteur.set(id, {
-                id,
-                nom: publication.auteur,
-                points: (current?.points || 0) + 1,
-            });
-        });
-
-        return [...pointsParAuteur.values()].sort((a, b) => b.points - a.points);
-    }, [displayName, publicationsAmis, user?.id, workoutsPerso.length]);
+        return [
+            {
+                id: user?.id || "me",
+                nom: displayName,
+                points: workoutsPerso.length,
+                estMoi: true,
+            },
+        ];
+    }, [displayName, ranking, user?.id, workoutsPerso.length]);
 
     // Creation d'un apercu de la seance du jour avant publication.
     const maPublicationDuJour = useMemo(() => {
@@ -888,7 +859,7 @@ export default function SocialScreen() {
                 <SectionCard ui={ui} title="Classement">
                     {classement.map((joueur, index) => {
                         const rang = calculerRang(joueur.points);
-                        const estMoi = joueur.nom === displayName;
+                        const estMoi = joueur.estMoi === true || joueur.nom === displayName;
 
                         return (
                             <View

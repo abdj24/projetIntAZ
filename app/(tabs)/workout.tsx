@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useMemo, useState } from "react";
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useTheme } from "@/context/context";
+import { useAuth } from "@/context/AuthContext";
 import { useWorkouts } from "@/context/WorkoutContext";
 
 import { SectionCard } from "@/components/common/SectionCard";
@@ -23,7 +24,7 @@ type ModeleWorkout = {
     exercises: ExerciceModele[];
 };
 
-const STORAGE_KEY = "endorphine_workout_templates_v1";
+const STORAGE_KEY_PREFIX = "endorphine_workout_templates_v1";
 
 // Liste de workouts par defaut avant personnalisation.
 const DEFAULT_WORKOUTS: ModeleWorkout[] = [
@@ -135,6 +136,7 @@ function creerId(prefix: string) {
 export default function WorkoutScreen() {
     // Initialisation du theme et du contexte workouts.
     const { theme } = useTheme();
+    const { user } = useAuth();
     const { workouts, addWorkout } = useWorkouts();
     const ui = getUiColors(theme);
 
@@ -154,11 +156,32 @@ export default function WorkoutScreen() {
     const [exerciceDrafts, setExerciceDrafts] = useState<Record<string, string>>({});
 
     const aujourdhui = toLocalDateString(new Date());
+    const storageKey = useMemo(
+        () => `${STORAGE_KEY_PREFIX}_${user?.id || user?._id || "invite"}`,
+        [user?._id, user?.id]
+    );
 
     // Chargement des modeles personnalises depuis le stockage local.
     useEffect(() => {
         async function chargerModeles() {
-            const saved = await AsyncStorage.getItem(STORAGE_KEY);
+            const saved = await AsyncStorage.getItem(storageKey);
+
+            setModeles(DEFAULT_WORKOUTS);
+            setWorkoutChoisiId(null);
+            setDemarre(false);
+            setTermine(false);
+            setError("");
+            setCompletes([]);
+            setModeleEditionId(DEFAULT_WORKOUTS[0].id);
+            setTitreEdition(DEFAULT_WORKOUTS[0].title);
+            setExerciceDrafts(
+                Object.fromEntries(
+                    DEFAULT_WORKOUTS[0].exercises.map((exercice) => [
+                        exercice.id,
+                        exercice.label,
+                    ])
+                )
+            );
 
             if (!saved) return;
 
@@ -169,14 +192,22 @@ export default function WorkoutScreen() {
                     setModeles(parsed);
                     setModeleEditionId(parsed[0].id);
                     setTitreEdition(parsed[0].title);
+                    setExerciceDrafts(
+                        Object.fromEntries(
+                            parsed[0].exercises.map((exercice: ExerciceModele) => [
+                                exercice.id,
+                                exercice.label,
+                            ])
+                        )
+                    );
                 }
             } catch {
-                await AsyncStorage.removeItem(STORAGE_KEY);
+                await AsyncStorage.removeItem(storageKey);
             }
         }
 
         chargerModeles();
-    }, []);
+    }, [storageKey]);
 
     // Recuperation du workout choisi par l'utilisateur.
     const modeleChoisi = useMemo(
@@ -210,7 +241,7 @@ export default function WorkoutScreen() {
     // Sauvegarde des modeles personnalises dans le stockage local.
     async function sauvegarderModeles(nextModeles: ModeleWorkout[]) {
         setModeles(nextModeles);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextModeles));
+        await AsyncStorage.setItem(storageKey, JSON.stringify(nextModeles));
     }
 
     // Choix d'un workout dans la liste.
