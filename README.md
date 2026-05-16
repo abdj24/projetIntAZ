@@ -199,6 +199,8 @@ npx tsc --noEmit
 
 ## Notes
 
-- Ne pas partager le vrai `.env`.
 - Ne pas envoyer `node_modules` dans GitHub.
-- Si quelqu'un importe le projet, il doit faire `npm install`, creer son `.env`, lancer MongoDB, puis faire `npm start`.
+- Si quelqu'un importe le projet, il doit faire `npm install`, puis faire `npm.cmd start`.
+
+## Screenshots
+Le fichier zip contenant les screenshots de l'application a été upload dans Teams.
