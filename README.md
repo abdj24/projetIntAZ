@@ -27,7 +27,6 @@ Avant de lancer le projet, installer :
 
 - Node.js (TRÈS IMPORTANT: https://nodejs.org/en/download)
 - npm
-- MongoDB local ou MongoDB Atlas
 
 Ensuite, dans le dossier du projet :
 
