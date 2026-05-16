@@ -17,7 +17,7 @@ L'application permet de :
 - Expo React Native
 - React / TypeScript
 - Expo Router
-- Express
+- Node.js
 - MongoDB avec Mongoose
 - JWT pour l'authentification
 
@@ -25,9 +25,8 @@ L'application permet de :
 
 Avant de lancer le projet, installer :
 
-- Node.js
+- Node.js (TRÈS IMPORTANT: https://nodejs.org/en/download)
 - npm
-- MongoDB local ou MongoDB Atlas
 
 Ensuite, dans le dossier du projet :
 
