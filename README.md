@@ -201,3 +201,5 @@ npx tsc --noEmit
 
 - Ne pas envoyer `node_modules` dans GitHub.
 - Si quelqu'un importe le projet, il doit faire `npm install`, puis faire `npm.cmd start`.
+
+## Screenshots
