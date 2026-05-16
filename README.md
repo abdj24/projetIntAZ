@@ -203,3 +203,4 @@ npx tsc --noEmit
 - Si quelqu'un importe le projet, il doit faire `npm install`, puis faire `npm.cmd start`.
 
 ## Screenshots
+Le fichier zip contenant les screenshots de l'application a été upload dans Teams.
