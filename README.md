@@ -17,7 +17,7 @@ L'application permet de :
 - Expo React Native
 - React / TypeScript
 - Expo Router
-- Express
+- Node.js
 - MongoDB avec Mongoose
 - JWT pour l'authentification
 
