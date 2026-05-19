@@ -1,24 +1,49 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+//Généré par IA
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import {
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider as NavigationThemeProvider,
+} from "@react-navigation/native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import "react-native-reanimated";
+
+import { ThemeProvider, useTheme } from "@/context/context";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { WorkoutProvider } from "@/context/WorkoutContext";
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+    anchor: "(tabs)",
 };
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+// Navigation principale apres chargement de la session.
+function AppNavigator() {
+    const { theme } = useTheme();
+    const { loading } = useAuth();
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+    if (loading) return null;
+
+    return (
+        <NavigationThemeProvider value={theme === "dark" ? DarkTheme : DefaultTheme}>
+            <Stack>
+                <Stack.Screen name="login" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        </NavigationThemeProvider>
+    );
+}
+
+// Initialisation des providers globaux de l'application.
+export default function RootLayout() {
+    return (
+        <ThemeProvider>
+            <AuthProvider>
+                <WorkoutProvider>
+                    <AppNavigator />
+                </WorkoutProvider>
+            </AuthProvider>
+        </ThemeProvider>
+    );
 }

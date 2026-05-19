@@ -1,98 +1,361 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+//Généré par IA
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useCallback, useMemo, useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useTheme } from "@/context/context";
+import { useWorkouts } from "@/context/WorkoutContext";
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+import { SectionCard } from "@/components/common/SectionCard";
+import { StatCard } from "@/components/common/StatCard";
+import { ProgressBar } from "@/components/common/ProgressBar";
+import { getUiColors } from "@/components/utils/themeUtils";
+import { formaterDate, toLocalDateString } from "@/components/utils/dateUtils";
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+type Habitudes = {
+    meditation: boolean;
+    eau: boolean;
+    marche: boolean;
+};
+
+const OBJECTIF_SEMAINE = 4;
+
+// Calcul de la salutation selon l'heure actuelle.
+function calculerSalutation(): string {
+    const heure = new Date().getHours();
+    if (heure < 12) return "Bonjour";
+    if (heure < 18) return "Bon après-midi";
+    return "Bonsoir";
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
+// Message court affiche par l'assistant bien-etre de l'accueil.
+function calculerMessageAssistant(
+    totalWorkoutsAujourdhui: number,
+    habitudes: Habitudes
+): string {
+    if (totalWorkoutsAujourdhui === 0) {
+        return "Tu n'as encore rien log aujourd'hui. Une petite séance rapide serait parfaite 👀";
+    }
+    if (!habitudes.meditation) {
+        return "Belle progression aujourd'hui. Tu peux compléter avec 5 minutes de méditation 🧘";
+    }
+    if (habitudes.meditation && habitudes.eau && habitudes.marche) {
+        return "Très propre aujourd'hui. Continue comme ça 🔥";
+    }
+    return "Bonne journée pour une courte séance 💪";
+}
+
+// Calcul du rang selon le nombre de workouts enregistres.
+function calculerRang(totalWorkouts: number): string {
+    if (totalWorkouts >= 20) return "Diamond";
+    if (totalWorkouts >= 12) return "Platinum";
+    if (totalWorkouts >= 7) return "Gold";
+    if (totalWorkouts >= 3) return "Silver";
+    return "Bronze";
+}
+
+// Calcul de la progression vers le prochain rang.
+function calculerProgressionRang(totalWorkouts: number): number {
+    if (totalWorkouts >= 20) return 100;
+    if (totalWorkouts >= 12) return Math.round(((totalWorkouts - 12) / 8) * 100);
+    if (totalWorkouts >= 7) return Math.round(((totalWorkouts - 7) / 5) * 100);
+    if (totalWorkouts >= 3) return Math.round(((totalWorkouts - 3) / 4) * 100);
+    return Math.round((totalWorkouts / 3) * 100);
+}
+
+export default function HomeScreen() {
+    // Initialisation du theme et des donnees de workouts.
+    const { theme, toggleTheme } = useTheme();
+    const { workouts, refreshWorkouts } = useWorkouts();
+    const ui = getUiColors(theme);
+
+    // Initialisation des habitudes du jour.
+    const [habitudes, setHabitudes] = useState<Habitudes>({
+        meditation: false,
+        eau: false,
+        marche: false,
+    });
+
+    // Rechargement des workouts quand l'accueil redevient actif.
+    useFocusEffect(
+        useCallback(() => {
+            void refreshWorkouts();
+        }, [refreshWorkouts])
+    );
+
+    const today = toLocalDateString(new Date());
+
+    // Copie locale des workouts pour calculer les statistiques.
+    const tousLesWorkouts = useMemo(
+        () => [...workouts],
+        [workouts]
+    );
+
+    // Filtre des workouts de la journee.
+    const workoutsAujourdhui = useMemo(
+        () => tousLesWorkouts.filter((w) => w.date === today),
+        [tousLesWorkouts, today]
+    );
+
+    // Filtre des workouts sur les 7 derniers jours.
+    const workouts7Jours = useMemo(() => {
+        const dateAujourdhui = new Date(today);
+
+        return tousLesWorkouts.filter((workout) => {
+            const dateWorkout = new Date(workout.date);
+            const diffJours =
+                (dateAujourdhui.getTime() - dateWorkout.getTime()) / (1000 * 60 * 60 * 24);
+
+            return diffJours >= 0 && diffJours < 7;
+        });
+    }, [tousLesWorkouts, today]);
+
+    // Selection des activites recentes affichees en bas de l'accueil.
+    const activitesRecentes = useMemo(
+        () =>
+            [...tousLesWorkouts]
+                .sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`))
+                .slice(0, 4),
+        [tousLesWorkouts]
+    );
+
+    const totalWorkoutsAujourdhui = workoutsAujourdhui.length;
+
+    const totalExercicesAujourdhui = workoutsAujourdhui.reduce(
+        (total, w) => total + w.exercises.length,
+        0
+    );
+
+    const dureeAujourdhui = workoutsAujourdhui.reduce(
+        (total, w) => total + w.duration,
+        0
+    );
+
+    const seancesSemaine = workouts7Jours.length;
+    const progressionSemaine = Math.min(
+        Math.round((seancesSemaine / OBJECTIF_SEMAINE) * 100),
+        100
+    );
+
+    const totalWorkouts = tousLesWorkouts.length;
+    const rang = calculerRang(totalWorkouts);
+    const progressionRang = calculerProgressionRang(totalWorkouts);
+
+    const salutation = calculerSalutation();
+    const messageAssistant = calculerMessageAssistant(totalWorkoutsAujourdhui, habitudes);
+    const habitudesValidees = Object.values(habitudes).filter(Boolean).length;
+
+    // Activation ou desactivation d'une habitude quotidienne.
+    function basculerHabitude(cle: keyof Habitudes) {
+        setHabitudes((ancien) => ({ ...ancien, [cle]: !ancien[cle] }));
+    }
+
+    return (
+        <ScrollView
+            style={{ flex: 1, backgroundColor: ui.screenBackground }}
+            contentContainerStyle={{ padding: 20, paddingTop: 30, paddingBottom: 120 }}
+        >
+            <Text
+                style={{
+                    color: ui.textPrimary,
+                    fontSize: 34,
+                    fontWeight: "800",
+                    marginBottom: 6,
+                }}
+            >
+                Home
+            </Text>
+
+            <Text style={{ color: ui.textMuted, fontSize: 15, marginBottom: 14 }}>
+                {salutation} — voici ton aperçu du jour
+            </Text>
+
+            <TouchableOpacity
+                onPress={toggleTheme}
+                style={{
+                    backgroundColor: ui.cardSecondary,
+                    borderRadius: 14,
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    alignSelf: "flex-start",
+                    marginBottom: 20,
+                    borderWidth: 1,
+                    borderColor: ui.border,
+                }}
+            >
+                <Text style={{ color: ui.textPrimary, fontWeight: "700" }}>
+                    Changer le thème {theme === "dark" ? "☀️" : "🌙"}
+                </Text>
+            </TouchableOpacity>
+
+            <SectionCard ui={ui} marginBottom={18}>
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 20,
+                        fontWeight: "700",
+                        marginBottom: 8,
+                    }}
+                >
+                    Objectif de la semaine
+                </Text>
+
+                <Text
+                    style={{
+                        color: ui.accent,
+                        fontSize: 28,
+                        fontWeight: "800",
+                    }}
+                >
+                    {seancesSemaine}/{OBJECTIF_SEMAINE} séances
+                </Text>
+
+                <Text
+                    style={{
+                        color: ui.textSecondary,
+                        fontSize: 14,
+                        marginTop: 6,
+                        marginBottom: 14,
+                    }}
+                >
+                    {seancesSemaine >= OBJECTIF_SEMAINE
+                        ? "Objectif atteint 🎉"
+                        : "Continue, tu avances bien"}
+                </Text>
+
+                <ProgressBar value={progressionSemaine} ui={ui} />
+            </SectionCard>
+
+            <SectionCard ui={ui} marginBottom={18}>
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 20,
+                        fontWeight: "700",
+                        marginBottom: 10,
+                    }}
+                >
+                    Assistant bien-être
+                </Text>
+
+                <Text
+                    style={{
+                        color: ui.textSecondary,
+                        fontSize: 14,
+                        lineHeight: 20,
+                        marginBottom: 18,
+                    }}
+                >
+                    {messageAssistant}
+                </Text>
+
+                <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+                    {[
+                        ["meditation", "Faire méditation", "Méditation faite"],
+                        ["eau", "Boire de l'eau", "Hydratation OK"],
+                        ["marche", "Faire une marche", "Marche faite"],
+                    ].map(([cle, label, labelActif]) => {
+                        const key = cle as keyof Habitudes;
+                        const actif = habitudes[key];
+
+                        return (
+                            <TouchableOpacity
+                                key={cle}
+                                onPress={() => basculerHabitude(key)}
+                                style={{
+                                    backgroundColor: actif ? ui.accent : ui.habitInactive,
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 10,
+                                    borderRadius: 12,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        color: actif ? ui.habitActiveText : ui.textPrimary,
+                                        fontWeight: "700",
+                                        fontSize: 14,
+                                    }}
+                                >
+                                    {actif ? labelActif : label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </SectionCard>
+
+            <View style={{ flexDirection: "row", gap: 14, marginBottom: 18 }}>
+                <StatCard label="Workouts du jour" value={totalWorkoutsAujourdhui} ui={ui} />
+                <StatCard label="Exercices du jour" value={totalExercicesAujourdhui} ui={ui} />
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 14, marginBottom: 18 }}>
+                <StatCard label="Minutes du jour" value={dureeAujourdhui} ui={ui} />
+                <StatCard label="Habitudes validées" value={`${habitudesValidees}/3`} ui={ui} />
+            </View>
+
+            <SectionCard ui={ui} marginBottom={18}>
+                <Text style={{ color: ui.textMuted, fontSize: 13, marginBottom: 10 }}>
+                    TON RANG
+                </Text>
+
+                <Text style={{ color: ui.textPrimary, fontSize: 26, fontWeight: "800" }}>
+                    {rang}
+                </Text>
+
+                <Text style={{ color: ui.textSecondary, marginTop: 6, fontSize: 14, marginBottom: 14 }}>
+                    Basé sur tes séances enregistrées
+                </Text>
+
+                <ProgressBar value={progressionRang} ui={ui} height={8} />
+            </SectionCard>
+
+            <SectionCard ui={ui} marginBottom={0}>
+                <Text
+                    style={{
+                        color: ui.textPrimary,
+                        fontSize: 19,
+                        fontWeight: "700",
+                        marginBottom: 14,
+                    }}
+                >
+                    Activité récente
+                </Text>
+
+                {activitesRecentes.length === 0 ? (
+                    <Text style={{ color: ui.textMuted, fontSize: 14 }}>
+                        Aucune activité récente.
+                    </Text>
+                ) : (
+                    activitesRecentes.map((workout) => (
+                        <View
+                            key={workout.id}
+                            style={{
+                                backgroundColor: ui.cardSecondary,
+                                borderRadius: 14,
+                                padding: 14,
+                                marginBottom: 10,
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: ui.textPrimary,
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                    marginBottom: 4,
+                                }}
+                            >
+                                {workout.title}
+                            </Text>
+
+                            <Text style={{ color: ui.textMuted, fontSize: 13 }}>
+                                {formaterDate(workout.date)} • {workout.duration} min •{" "}
+                                {workout.exercises.length} exo(s)
+                            </Text>
+                        </View>
+                    ))
+                )}
+            </SectionCard>
+        </ScrollView>
+    );
+}

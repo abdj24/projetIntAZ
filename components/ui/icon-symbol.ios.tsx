@@ -1,6 +1,8 @@
+//Généré par IA
 import { SymbolView, SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { StyleProp, ViewStyle } from 'react-native';
 
+// Icone native SF Symbols pour iOS.
 export function IconSymbol({
   name,
   size = 24,
@@ -14,6 +16,7 @@ export function IconSymbol({
   style?: StyleProp<ViewStyle>;
   weight?: SymbolWeight;
 }) {
+  // Rendu du symbole natif avec la taille demandee.
   return (
     <SymbolView
       weight={weight}

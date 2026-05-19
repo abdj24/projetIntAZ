@@ -1,5 +1,7 @@
+//Généré par IA
 import Animated from 'react-native-reanimated';
 
+// Petite animation de salutation.
 export function HelloWave() {
   return (
     <Animated.Text

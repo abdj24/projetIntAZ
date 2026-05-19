@@ -1,3 +1,4 @@
+//Généré par IA
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -8,6 +9,7 @@ export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
 };
 
+// Texte qui adapte sa couleur au theme actif.
 export function ThemedText({
   style,
   lightColor,
@@ -33,6 +35,7 @@ export function ThemedText({
   );
 }
 
+// Styles des variantes de texte.
 const styles = StyleSheet.create({
   default: {
     fontSize: 16,

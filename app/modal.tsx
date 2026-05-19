@@ -1,3 +1,4 @@
+//Généré par IA
 import { Link } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
@@ -5,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
 export default function ModalScreen() {
+  // Affichage de la modale exemple de l'application.
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">This is a modal</ThemedText>
@@ -15,6 +17,7 @@ export default function ModalScreen() {
   );
 }
 
+// Styles de la modale.
 const styles = StyleSheet.create({
   container: {
     flex: 1,

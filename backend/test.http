@@ -1,0 +1,2 @@
+GET http://localhost:3000/workouts
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZjAzYzJiMTNmYmU1NGE5YTI1NGFkNSIsImlhdCI6MTc3NzM1MjYzNCwiZXhwIjoxNzc3OTU3NDM0fQ.wlg9yVe-xF_G2PPEYuy5PKIpwCc1M1uUUFO_bylEJys

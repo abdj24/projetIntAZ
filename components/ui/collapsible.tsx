@@ -1,3 +1,4 @@
+//Généré par IA
 import { PropsWithChildren, useState } from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
@@ -7,7 +8,9 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+// Bloc ouvrable et refermable.
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
+  // Initialisation de l'etat ouvert/ferme.
   const [isOpen, setIsOpen] = useState(false);
   const theme = useColorScheme() ?? 'light';
 
@@ -32,6 +35,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
   );
 }
 
+// Styles du composant repliable.
 const styles = StyleSheet.create({
   heading: {
     flexDirection: 'row',
